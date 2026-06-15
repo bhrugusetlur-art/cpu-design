@@ -1,0 +1,15 @@
+CLAUDE.md
+docs/
+
+# Generated simulation outputs
+*_sim
+*_tb
+*.vcd
+
+# Local build products
+/assembler
+/dbg_sim
+/cputop_sim
+/l2_tb
+/hier_tb
+/top_sim
