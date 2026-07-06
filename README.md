@@ -143,6 +143,24 @@ Expected final register values:
 
 Expected halt display: around `H0E`.
 
+## Simulation Regression
+
+`cpu_programs_tb.v` runs all three demo programs in simulation and checks their expected final PC/register values:
+
+- `programs/cache_store_load.mem`
+- `programs/alu_ops.mem`
+- `programs/branch_jz.mem`
+
+Vivado simulator flow:
+
+```text
+xvlog -sv cpu_programs_tb.v cpu_top.v datapath.v cache_hierarchy.v l1_cache.v l2_cache.v dmem.v pc.v imem.v control.v reg_file.v alu.v
+xelab -debug typical cpu_programs_tb -s cpu_programs_sim
+xsim cpu_programs_sim -runall
+```
+
+The regression should report all checks passed.
+
 ## Hardware-Verified Features
 
 These features have been checked on the Basys3 FPGA:
@@ -162,3 +180,4 @@ These features have been checked on the Basys3 FPGA:
 - JZ not taken
 - cache miss stall behavior
 - register debug LEDs
+- front-panel debug selector (`SW5:SW4`)
