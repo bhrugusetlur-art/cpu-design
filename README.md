@@ -1,6 +1,14 @@
 # CPU Design on Basys3
 
-A small Verilog CPU project targeted at the Digilent Basys3 FPGA. The board top is `basys3_top.v`, which wraps `cpu_top.v` and shows CPU state on LEDs and the 7-segment display.
+A small Verilog CPU project targeted at the Digilent Basys3 FPGA. The board top is `design/basys3_top.v`, which wraps `design/cpu_top.v` and shows CPU state on LEDs and the 7-segment display.
+
+## Repository Layout
+
+- `design/`: synthesizable Verilog sources and the Basys3 XDC constraints file
+- `sim/`: simulation testbenches and simulation-only memory files
+- `programs/`: named FPGA demo programs that can be copied into `program.mem`
+- `tests/`: assembler test script
+- `program.mem`: active FPGA instruction memory image used by `basys3_top.v`
 
 ## Basys3 Controls
 
@@ -154,7 +162,7 @@ Expected halt display: around `H0E`.
 Vivado simulator flow:
 
 ```text
-xvlog -sv cpu_programs_tb.v cpu_top.v datapath.v cache_hierarchy.v l1_cache.v l2_cache.v dmem.v pc.v imem.v control.v reg_file.v alu.v
+xvlog -sv sim/cpu_programs_tb.v design/cpu_top.v design/datapath.v design/cache_hierarchy.v design/l1_cache.v design/l2_cache.v design/dmem.v design/pc.v design/imem.v design/control.v design/reg_file.v design/alu.v
 xelab -debug typical cpu_programs_tb -s cpu_programs_sim
 xsim cpu_programs_sim -runall
 ```

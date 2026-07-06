@@ -3,7 +3,7 @@
 //  Uses the real cache hierarchy + dmem (not a stub).
 //  STORE/LOAD stall the CPU on cold cache misses.
 //
-//  Test program (test_datapath.mem):
+//  Test program (sim/test_datapath.mem):
 //    0: MOV R0, #0x0A    R0 = 10
 //    1: MOV R1, #0x03    R1 =  3
 //    2: ADD R0, R1       R0 = 13 (0x0D)
@@ -13,9 +13,10 @@
 //    6: HALT
 //
 //  Run with:
-//    iverilog -g2012 -o top_sim cpu_top_tb.v cpu_top.v datapath.v \
-//             cache_hierarchy.v l1_cache.v l2_cache.v dmem.v \
-//             pc.v imem.v control.v reg_file.v alu.v && vvp top_sim
+//    iverilog -g2012 -o top_sim sim/cpu_top_tb.v design/cpu_top.v \
+//             design/datapath.v design/cache_hierarchy.v design/l1_cache.v \
+//             design/l2_cache.v design/dmem.v design/pc.v design/imem.v \
+//             design/control.v design/reg_file.v design/alu.v && vvp top_sim
 // =============================================================
 `timescale 1ns/1ps
 
@@ -30,7 +31,7 @@ module cpu_top_tb;
     wire [7:0] debug_cpu_addr;
     wire       debug_cpu_req, debug_cpu_we, debug_stall;
 
-    cpu_top #(.MEM_FILE("test_datapath.mem")) dut (
+    cpu_top #(.MEM_FILE("sim/test_datapath.mem")) dut (
         .clk(clk), .rst(rst), .halt(halt), .pc_out(pc_out),
         .debug_r0(debug_r0), .debug_r1(debug_r1),
         .debug_r2(debug_r2), .debug_r3(debug_r3),

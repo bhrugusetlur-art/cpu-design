@@ -2,7 +2,7 @@
 //  cache_hierarchy_tb.v  —  Testbench for cache_hierarchy
 //  Run with:
 //    iverilog -g2012 -o hier_tb cache_hierarchy_tb.v \
-//             cache_hierarchy.v l1_cache.v l2_cache.v && vvp hier_tb
+//             design/cache_hierarchy.v design/l1_cache.v design/l2_cache.v && vvp hier_tb
 // =============================================================
 `timescale 1ns/1ps
 

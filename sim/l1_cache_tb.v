@@ -1,7 +1,7 @@
 // =============================================================
 //  l1_cache_tb.v  —  Testbench for l1_cache
 //  Run with:
-//    iverilog -g2012 -o l1_tb l1_cache_tb.v l1_cache.v && vvp l1_tb
+//    iverilog -g2012 -o l1_tb sim/l1_cache_tb.v design/l1_cache.v && vvp l1_tb
 // =============================================================
 `timescale 1ns/1ps
 

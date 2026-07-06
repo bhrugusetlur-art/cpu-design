@@ -1,7 +1,7 @@
 // =============================================================
 //  pc_tb.v  —  Testbench for pc
 //  Run with:
-//    iverilog -g2012 -o pc_sim pc_tb.v pc.v && vvp pc_sim
+//    iverilog -g2012 -o pc_sim sim/pc_tb.v design/pc.v && vvp pc_sim
 // =============================================================
 `timescale 1ns/1ps
 

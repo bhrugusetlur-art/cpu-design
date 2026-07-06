@@ -9,7 +9,7 @@ module dbg_cputop;
     wire [7:0] debug_cpu_addr;
     wire       debug_cpu_req, debug_cpu_we, debug_stall;
 
-    cpu_top #(.MEM_FILE("test_datapath.mem")) dut (
+    cpu_top #(.MEM_FILE("sim/test_datapath.mem")) dut (
         .clk(clk), .rst(rst), .halt(halt), .pc_out(pc_out),
         .debug_r0(debug_r0), .debug_r1(debug_r1),
         .debug_r2(debug_r2), .debug_r3(debug_r3),

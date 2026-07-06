@@ -1,7 +1,7 @@
 // =============================================================
 //  reg_file_tb.v  —  Testbench for reg_file
 //  Run with:
-//    iverilog -g2012 -o rf_tb reg_file_tb.v reg_file.v && vvp rf_tb
+//    iverilog -g2012 -o rf_tb sim/reg_file_tb.v design/reg_file.v && vvp rf_tb
 // =============================================================
 `timescale 1ns/1ps
 

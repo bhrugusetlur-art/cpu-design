@@ -1,7 +1,7 @@
 // =============================================================
 //  dmem_tb.v  —  Testbench for dmem
 //  Run with:
-//    iverilog -g2012 -o dmem_sim dmem_tb.v dmem.v && vvp dmem_sim
+//    iverilog -g2012 -o dmem_sim sim/dmem_tb.v design/dmem.v && vvp dmem_sim
 // =============================================================
 `timescale 1ns/1ps
 

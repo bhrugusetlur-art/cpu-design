@@ -1,7 +1,7 @@
 // =============================================================
 //  alu_tb.v  —  Testbench for alu
 //  Run with:
-//    iverilog -g2012 -o alu_tb alu_tb.v alu.v && vvp alu_tb
+//    iverilog -g2012 -o alu_tb sim/alu_tb.v design/alu.v && vvp alu_tb
 // =============================================================
 `timescale 1ns/1ps
 

@@ -1,7 +1,7 @@
 // =============================================================
 //  imem_tb.v  —  Testbench for imem
 //  Run with:
-//    iverilog -g2012 -o imem_sim imem_tb.v imem.v && vvp imem_sim
+//    iverilog -g2012 -o imem_sim sim/imem_tb.v design/imem.v && vvp imem_sim
 // =============================================================
 `timescale 1ns/1ps
 
@@ -10,7 +10,7 @@ module imem_tb;
     reg  [7:0]  addr;
     wire [15:0] instr;
 
-    imem #(.MEM_FILE("test_imem.mem")) dut (.addr(addr), .instr(instr));
+    imem #(.MEM_FILE("sim/test_imem.mem")) dut (.addr(addr), .instr(instr));
 
     integer pass_cnt, fail_cnt;
 

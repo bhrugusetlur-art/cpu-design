@@ -1,7 +1,7 @@
 // =============================================================
 //  control_tb.v  —  Testbench for control
 //  Run with:
-//    iverilog -g2012 -o ctrl_sim control_tb.v control.v && vvp ctrl_sim
+//    iverilog -g2012 -o ctrl_sim sim/control_tb.v design/control.v && vvp ctrl_sim
 // =============================================================
 `timescale 1ns/1ps
 

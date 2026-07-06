@@ -3,7 +3,7 @@
 //  Uses a 0-latency memory stub (stall=0 always) so each
 //  instruction completes in exactly one clock cycle.
 //
-//  Test program (test_datapath.mem):
+//  Test program (sim/test_datapath.mem):
 //    addr 0: 100A  MOV R0, #0x0A   → R0 = 10
 //    addr 1: 1403  MOV R1, #0x03   → R1 =  3
 //    addr 2: 2100  ADD R0, R1      → R0 = 13 (0x0D)
@@ -13,8 +13,9 @@
 //    addr 6: F000  HALT
 //
 //  Run with:
-//    iverilog -g2012 -o dp_sim datapath_tb.v datapath.v \
-//             pc.v imem.v control.v reg_file.v alu.v && vvp dp_sim
+//    iverilog -g2012 -o dp_sim sim/datapath_tb.v design/datapath.v \
+//             design/pc.v design/imem.v design/control.v \
+//             design/reg_file.v design/alu.v && vvp dp_sim
 // =============================================================
 `timescale 1ns/1ps
 
@@ -30,7 +31,7 @@ module datapath_tb;
     wire       debug_zero_flag;
     wire [15:0] debug_instr;
 
-    datapath #(.MEM_FILE("test_datapath.mem")) dut (
+    datapath #(.MEM_FILE("sim/test_datapath.mem")) dut (
         .clk(clk), .rst(rst),
         .cpu_addr(cpu_addr), .cpu_wdata(cpu_wdata),
         .cpu_we(cpu_we), .cpu_req(cpu_req),
