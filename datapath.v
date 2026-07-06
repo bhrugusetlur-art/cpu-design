@@ -22,7 +22,9 @@ module datapath #(
     output wire [7:0]  debug_r0,
     output wire [7:0]  debug_r1,
     output wire [7:0]  debug_r2,
-    output wire [7:0]  debug_r3
+    output wire [7:0]  debug_r3,
+    output wire        debug_zero_flag,
+    output wire [15:0] debug_instr
 );
 
     wire [7:0]  pc_val;
@@ -68,6 +70,8 @@ module datapath #(
 
     assign halt   = ctrl_halt;
     assign pc_out = pc_val;
+    assign debug_zero_flag = saved_zero_flag;
+    assign debug_instr = instr;
 
     pc pc_inst (
         .clk(clk), .rst(rst),

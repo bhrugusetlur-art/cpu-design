@@ -27,6 +27,8 @@ module datapath_tb;
     wire       halt;
     wire [7:0] pc_out;
     wire [7:0] debug_r0, debug_r1, debug_r2, debug_r3;
+    wire       debug_zero_flag;
+    wire [15:0] debug_instr;
 
     datapath #(.MEM_FILE("test_datapath.mem")) dut (
         .clk(clk), .rst(rst),
@@ -35,7 +37,8 @@ module datapath_tb;
         .cpu_rdata(cpu_rdata), .stall(1'b0),
         .halt(halt), .pc_out(pc_out),
         .debug_r0(debug_r0), .debug_r1(debug_r1),
-        .debug_r2(debug_r2), .debug_r3(debug_r3)
+        .debug_r2(debug_r2), .debug_r3(debug_r3),
+        .debug_zero_flag(debug_zero_flag), .debug_instr(debug_instr)
     );
 
     initial clk = 0;

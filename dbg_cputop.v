@@ -4,11 +4,18 @@ module dbg_cputop;
     wire halt;
     wire [7:0] pc_out;
     wire [7:0] debug_r0, debug_r1, debug_r2, debug_r3;
+    wire       debug_zero_flag;
+    wire [15:0] debug_instr;
+    wire [7:0] debug_cpu_addr;
+    wire       debug_cpu_req, debug_cpu_we, debug_stall;
 
     cpu_top #(.MEM_FILE("test_datapath.mem")) dut (
         .clk(clk), .rst(rst), .halt(halt), .pc_out(pc_out),
         .debug_r0(debug_r0), .debug_r1(debug_r1),
-        .debug_r2(debug_r2), .debug_r3(debug_r3)
+        .debug_r2(debug_r2), .debug_r3(debug_r3),
+        .debug_zero_flag(debug_zero_flag), .debug_instr(debug_instr),
+        .debug_cpu_addr(debug_cpu_addr), .debug_cpu_req(debug_cpu_req),
+        .debug_cpu_we(debug_cpu_we), .debug_stall(debug_stall)
     );
     initial clk = 0;
     always #5 clk = ~clk;

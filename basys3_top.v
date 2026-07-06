@@ -7,18 +7,18 @@
 //    10 = 4 Hz
 //    11 = single-step with btnR
 //
-//  sw[3:2] LED[7:0] register select:
-//    00 = R0
-//    01 = R1
-//    10 = R2
-//    11 = R3
+//  sw[5:4] debug view:
+//    00 = register view; sw[3:2] selects R0/R1/R2/R3
+//    01 = PC view
+//    10 = memory/cache request view
+//    11 = flags/control view
 // ================================================================
 
 module basys3_top (
     input  wire        clk100,
     input  wire        btnC,
     input  wire        btnR,
-    input  wire [3:0]  sw,
+    input  wire [5:0]  sw,
     output wire [15:0] led,
     output wire [6:0]  seg,
     output wire [3:0]  an
@@ -78,6 +78,10 @@ wire cpu_clk = cpu_clk_r;
 wire [7:0] pc_out;
 wire       halt;
 wire [7:0] debug_r0, debug_r1, debug_r2, debug_r3;
+wire       debug_zero_flag;
+wire [15:0] debug_instr;
+wire [7:0] debug_cpu_addr;
+wire       debug_cpu_req, debug_cpu_we, debug_stall;
 
 cpu_top #(.MEM_FILE("program.mem")) core (
     .clk      (cpu_clk),
@@ -87,20 +91,36 @@ cpu_top #(.MEM_FILE("program.mem")) core (
     .debug_r0 (debug_r0),
     .debug_r1 (debug_r1),
     .debug_r2 (debug_r2),
-    .debug_r3 (debug_r3)
+    .debug_r3 (debug_r3),
+    .debug_zero_flag(debug_zero_flag),
+    .debug_instr(debug_instr),
+    .debug_cpu_addr(debug_cpu_addr),
+    .debug_cpu_req(debug_cpu_req),
+    .debug_cpu_we(debug_cpu_we),
+    .debug_stall(debug_stall)
 );
 
-reg [7:0] led_reg_value;
+reg [7:0] selected_reg_value;
 always @(*) begin
     case (sw[3:2])
-        2'b00:   led_reg_value = debug_r0;
-        2'b01:   led_reg_value = debug_r1;
-        2'b10:   led_reg_value = debug_r2;
-        default: led_reg_value = debug_r3;
+        2'b00:   selected_reg_value = debug_r0;
+        2'b01:   selected_reg_value = debug_r1;
+        2'b10:   selected_reg_value = debug_r2;
+        default: selected_reg_value = debug_r3;
     endcase
 end
 
-assign led = {6'b0, cpu_clk, halt, led_reg_value};
+reg [15:0] led_value;
+always @(*) begin
+    case (sw[5:4])
+        2'b00:   led_value = {6'b0, cpu_clk, halt, selected_reg_value};
+        2'b01:   led_value = {6'b0, cpu_clk, halt, pc_out};
+        2'b10:   led_value = {3'b0, debug_stall, debug_cpu_we, debug_cpu_req, cpu_clk, halt, debug_cpu_addr};
+        default: led_value = {debug_instr[15:8], 4'b0, debug_zero_flag, debug_stall, cpu_clk, halt};
+    endcase
+end
+
+assign led = led_value;
 
 reg [14:0] seg_cnt = 15'd0;
 reg [1:0]  dig_sel = 2'd0;

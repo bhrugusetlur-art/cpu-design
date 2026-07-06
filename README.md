@@ -11,17 +11,47 @@ A small Verilog CPU project targeted at the Digilent Basys3 FPGA. The board top 
   - `01`: 2 Hz
   - `10`: 4 Hz
   - `11`: single-step with `btnR`
-- `SW3:SW2`: select which register appears on `LED[7:0]`
+- `SW3:SW2`: register select when `SW5:SW4 = 00`
   - `00`: R0
   - `01`: R1
   - `10`: R2
   - `11`: R3
+- `SW5:SW4`: LED debug view
+  - `00`: register view
+  - `01`: PC view
+  - `10`: memory/cache request view
+  - `11`: instruction/flags view
 
 ## LED Output
+
+In register view (`SW5:SW4 = 00`):
 
 - `LED[7:0]`: selected register value
 - `LED[8]`: halt
 - `LED[9]`: CPU clock heartbeat
+
+In PC view (`SW5:SW4 = 01`):
+
+- `LED[7:0]`: `pc_out`
+- `LED[8]`: halt
+- `LED[9]`: CPU clock heartbeat
+
+In memory/cache request view (`SW5:SW4 = 10`):
+
+- `LED[7:0]`: current CPU data-memory address
+- `LED[8]`: halt
+- `LED[9]`: CPU clock heartbeat
+- `LED[10]`: cache request
+- `LED[11]`: memory write enable
+- `LED[12]`: memory stall
+
+In instruction/flags view (`SW5:SW4 = 11`):
+
+- `LED[15:8]`: current instruction high byte
+- `LED[3]`: saved zero flag
+- `LED[2]`: memory stall
+- `LED[1]`: CPU clock heartbeat
+- `LED[0]`: halt
 
 Read `LED[7:0]` as binary. For example:
 
