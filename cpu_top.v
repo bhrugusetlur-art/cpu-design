@@ -1,22 +1,5 @@
 // =============================================================
-//  cpu_top.v  —  Top-level: datapath + cache hierarchy + dmem
-//
-//  datapath ←→ cache_hierarchy ←→ dmem
-//
-//  Instruction memory (imem) lives inside datapath — Harvard
-//  architecture means instruction and data paths are separate.
-//  Only data memory goes through the cache hierarchy.
-//
-//  Stall handshake:
-//    cache_req = dp_cpu_req && !req_pending
-//      — forward the memory request for exactly one cycle per instruction
-//    mem_stall  = dp_stall || cache_req
-//      — hold the PC (and reg-write gate) during issue AND during miss
-//    req_pending clears when dp_stall=0, sets once dp_stall goes high
-//
-//  Without this gating, the registered stall from L1 arrives one
-//  cycle after the request is accepted, so the PC advances past the
-//  very next instruction before that instruction can issue.
+//  cpu_top.v - Top-level: datapath + cache hierarchy + dmem
 // =============================================================
 
 module cpu_top #(
@@ -25,35 +8,32 @@ module cpu_top #(
     input  wire clk,
     input  wire rst,
     output wire halt,
-    output wire [7:0] pc_out
+    output wire [7:0] pc_out,
+
+    output wire [7:0] debug_r0,
+    output wire [7:0] debug_r1,
+    output wire [7:0] debug_r2,
+    output wire [7:0] debug_r3
 );
 
-    // Datapath ↔ cache_hierarchy
     wire [7:0] dp_cpu_addr, dp_cpu_wdata, dp_cpu_rdata;
     wire       dp_cpu_we, dp_cpu_req;
-    wire       dp_stall;   // stall signal OUT of cache_hierarchy
+    wire       dp_stall;
 
-    // cache_hierarchy ↔ dmem
     wire [7:0] mem_addr, mem_wdata, mem_rdata;
     wire       mem_we, mem_re, mem_ready;
 
-    // req_pending: asserted after a cache request is issued, held until
-    // dp_stall drops.  Prevents the same LOAD/STORE from being re-issued
-    // while L1 is processing it.
     reg req_pending;
     always @(posedge clk or posedge rst) begin
         if (rst)
             req_pending <= 1'b0;
         else if (!dp_stall)
-            req_pending <= 1'b0;              // transaction complete, reset
+            req_pending <= 1'b0;
         else if (dp_cpu_req && !req_pending)
-            req_pending <= 1'b1;              // first stall cycle, lock in
+            req_pending <= 1'b1;
     end
 
     wire cache_req = dp_cpu_req && !req_pending;
-
-    // mem_stall: holds the PC and reg-file write-enable during issue (one
-    // cycle before dp_stall appears) and throughout the miss.
     wire mem_stall = dp_stall || cache_req;
 
     datapath #(.MEM_FILE(MEM_FILE)) dp (
@@ -66,7 +46,11 @@ module cpu_top #(
         .cpu_rdata(dp_cpu_rdata),
         .stall    (mem_stall),
         .halt     (halt),
-        .pc_out   (pc_out)
+        .pc_out   (pc_out),
+        .debug_r0 (debug_r0),
+        .debug_r1 (debug_r1),
+        .debug_r2 (debug_r2),
+        .debug_r3 (debug_r3)
     );
 
     cache_hierarchy cache (

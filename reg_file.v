@@ -1,10 +1,6 @@
 // =============================================================
-//  reg_file.v  —  4×8-bit register file
-//  R0–R3, 2 asynchronous read ports, 1 synchronous write port
-//
-//  Reads are combinational (same-cycle visibility of current value).
-//  Write takes effect on the next rising edge, so a read and write
-//  to the same address in the same cycle returns the OLD value.
+//  reg_file.v - 4x8-bit register file
+//  R0-R3, 2 asynchronous read ports, 1 synchronous write port
 // =============================================================
 
 module reg_file (
@@ -22,7 +18,13 @@ module reg_file (
     // Write port
     input  wire [1:0]  rd_addr,
     input  wire [7:0]  rd_data,
-    input  wire        wr_en
+    input  wire        wr_en,
+
+    // Debug outputs
+    output wire [7:0]  debug_r0,
+    output wire [7:0]  debug_r1,
+    output wire [7:0]  debug_r2,
+    output wire [7:0]  debug_r3
 );
 
     reg [7:0] regs [0:3];
@@ -40,5 +42,10 @@ module reg_file (
 
     assign rs1_data = regs[rs1_addr];
     assign rs2_data = regs[rs2_addr];
+
+    assign debug_r0 = regs[0];
+    assign debug_r1 = regs[1];
+    assign debug_r2 = regs[2];
+    assign debug_r3 = regs[3];
 
 endmodule

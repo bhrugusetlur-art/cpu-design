@@ -12,12 +12,15 @@ module reg_file_tb;
     reg  [7:0] rd_data;
     reg        wr_en;
     wire [7:0] rs1_data, rs2_data;
+    wire [7:0] debug_r0, debug_r1, debug_r2, debug_r3;
 
     reg_file dut (
         .clk(clk), .rst(rst),
         .rs1_addr(rs1_addr), .rs1_data(rs1_data),
         .rs2_addr(rs2_addr), .rs2_data(rs2_data),
-        .rd_addr(rd_addr), .rd_data(rd_data), .wr_en(wr_en)
+        .rd_addr(rd_addr), .rd_data(rd_data), .wr_en(wr_en),
+        .debug_r0(debug_r0), .debug_r1(debug_r1),
+        .debug_r2(debug_r2), .debug_r3(debug_r3)
     );
 
     initial clk = 0;
