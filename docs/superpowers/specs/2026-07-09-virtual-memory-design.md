@@ -19,7 +19,7 @@ All CPU data addresses remain 8 bits. Pages are 16 bytes:
 | PPN | `PTE[3:0]` | Physical page number, 0–15 |
 | valid | `PTE[7]` | Translation is present when set |
 
-`PTE[6:4]` are reserved and read as zero. The one-byte PTE for VPN `n` resides at physical address `8'hF0 + n`; therefore the page table occupies `0xF0–0xFF`. A valid translation creates physical address `{PPN, offset}`.
+`PTE[6:4]` are reserved and ignored by the MMU (the PTE is an ordinary RAM byte, so a LOAD of it returns whatever was stored). The one-byte PTE for VPN `n` resides at physical address `8'hF0 + n`; therefore the page table occupies `0xF0–0xFF`. A valid translation creates physical address `{PPN, offset}`.
 
 ## Components
 
@@ -39,6 +39,8 @@ The state machine behavior is:
 4. **FAULT:** Assert `page_fault`, hold `stall`, and retain `fault_va` until reset. No write-back or PC update occurs for the faulting instruction.
 
 The MMU never drives a data request at the same time as a page-table-walk request. Both use the existing L1 → L2 → `dmem` route, so a dirty PTE held in the cache remains visible to subsequent walks.
+
+Because requests are captured in IDLE and issued from ACCESS, every data access gains roughly one cycle relative to the current combinational request pulse. This is an accepted trade for a simpler FSM; acceptance is judged on final architectural state, not cycle counts.
 
 ### TLB coherence
 
@@ -61,7 +63,7 @@ This initialization mechanism is appropriate to v1's FPGA/simulation scope. An A
 1. `tlb_tb.v`: reset state, hit/miss lookup, fill, round-robin replacement, and flush.
 2. `mmu_tb.v`: TLB-hit passthrough, cached page-table walk/fill, replay for LOAD and STORE, fault address latching/freeze, and flush after a PTE-page STORE.
 3. CPU VM program test: write a PTE through its identity mapping, verify the TLB is flushed, access a remapped virtual address, then access an invalid page and verify the permanent fault state.
-4. Existing `cpu_top_tb.v` and `cpu_programs_tb.v`: preserve their expected behavior under the identity map. Their compile commands add `design/tlb.v` and `design/mmu.v`; the testbench source need not change.
+4. Existing `cpu_top_tb.v` and `cpu_programs_tb.v`: preserve their expected behavior under the identity map. Their compile commands add `design/tlb.v` and `design/mmu.v`; the testbench source need not change, though fixed cycle-count timeouts may need widening for the added per-access cycle.
 
 ## Acceptance criteria
 
