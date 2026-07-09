@@ -7,6 +7,9 @@ docs/
 *_tb
 *.vcd
 
+# Local visual brainstorming companion state
+/.superpowers/
+
 # Local build products
 /assembler
 /dbg_sim
