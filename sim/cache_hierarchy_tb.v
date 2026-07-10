@@ -153,6 +153,26 @@ module cache_hierarchy_tb;
         else
             $display("  FAIL: expected mem[0x04]=0xCD, got 0x%02h", mem[8'h04]);
 
+        // --------------------------------------------------
+        // Test 5: cold fill must place every byte at its own offset
+        //   Block 0x10-0x13 is untouched (index 4). First read fills
+        //   the L1 line; the rest hit L1 and expose any byte skew in
+        //   the L1←L2 per-byte fill handshake.
+        // --------------------------------------------------
+        $display("TEST 5: fill byte order across all offsets");
+        cpu_request(8'h11, 8'h00, 0);
+        if (cpu_rdata === 8'h11) $display("  PASS: rdata=0x%02h", cpu_rdata);
+        else $display("  FAIL: addr 0x11 expected 0x11 got 0x%02h", cpu_rdata);
+        cpu_request(8'h12, 8'h00, 0);
+        if (cpu_rdata === 8'h12) $display("  PASS: rdata=0x%02h", cpu_rdata);
+        else $display("  FAIL: addr 0x12 expected 0x12 got 0x%02h", cpu_rdata);
+        cpu_request(8'h13, 8'h00, 0);
+        if (cpu_rdata === 8'h13) $display("  PASS: rdata=0x%02h", cpu_rdata);
+        else $display("  FAIL: addr 0x13 expected 0x13 got 0x%02h", cpu_rdata);
+        cpu_request(8'h10, 8'h00, 0);
+        if (cpu_rdata === 8'h10) $display("  PASS: rdata=0x%02h", cpu_rdata);
+        else $display("  FAIL: addr 0x10 expected 0x10 got 0x%02h", cpu_rdata);
+
         $display("All tests done.");
         $finish;
     end

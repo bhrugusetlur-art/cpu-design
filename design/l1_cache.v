@@ -57,6 +57,7 @@ module l1_cache (
 
     reg [2:0] state;
     reg [1:0] byte_cnt;
+    reg       l2_pend;   // one L2 request outstanding; wait for l2_ready
 
     // Latched request
     reg [7:0] req_addr;
@@ -76,6 +77,7 @@ module l1_cache (
             l2_we    <= 0;
             l2_re    <= 0;
             byte_cnt <= 0;
+            l2_pend  <= 0;
             for (i = 0; i < 8; i = i + 1) begin
                 valid[i] <= 0;
                 dirty[i] <= 0;
@@ -130,12 +132,14 @@ module l1_cache (
                 // WRITEBACK: send each byte of the dirty line to L2
                 // ------------------------------------------------
                 WRITEBACK: begin
-                    if (!l2_we && !l2_ready) begin
+                    if (!l2_pend) begin
                         // Issue write for current byte
                         l2_addr  <= {tag[req_index], req_index, byte_cnt};
                         l2_wdata <= data[req_index][byte_cnt];
                         l2_we    <= 1;
+                        l2_pend  <= 1;
                     end else if (l2_ready) begin
+                        l2_pend <= 0;
                         if (byte_cnt == 2'd3) begin
                             dirty[req_index] <= 0;
                             byte_cnt         <= 0;
@@ -150,10 +154,12 @@ module l1_cache (
                 // FILL: fetch 4 bytes from L2 into this cache line
                 // ------------------------------------------------
                 FILL: begin
-                    if (!l2_re && !l2_ready) begin
+                    if (!l2_pend) begin
                         l2_addr <= {req_tag, req_index, byte_cnt};
                         l2_re   <= 1;
+                        l2_pend <= 1;
                     end else if (l2_ready) begin
+                        l2_pend <= 0;
                         data[req_index][byte_cnt] <= l2_rdata;
                         if (byte_cnt == 2'd3) begin
                             tag[req_index]   <= req_tag;
