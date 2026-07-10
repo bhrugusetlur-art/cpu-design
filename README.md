@@ -28,7 +28,7 @@ A small Verilog CPU project targeted at the Digilent Basys3 FPGA. The board top 
   - `00`: register view
   - `01`: PC view
   - `10`: memory/cache request view
-  - `11`: instruction/flags view
+  - `11`: page-fault/flags view
 
 ## LED Output
 
@@ -53,9 +53,10 @@ In memory/cache request view (`SW5:SW4 = 10`):
 - `LED[11]`: memory write enable
 - `LED[12]`: memory stall
 
-In instruction/flags view (`SW5:SW4 = 11`):
+In page-fault/flags view (`SW5:SW4 = 11`):
 
-- `LED[15:8]`: current instruction high byte
+- `LED[15:8]`: faulting virtual address (`debug_fault_va`)
+- `LED[4]`: page fault (`debug_page_fault`)
 - `LED[3]`: saved zero flag
 - `LED[2]`: memory stall
 - `LED[1]`: CPU clock heartbeat
