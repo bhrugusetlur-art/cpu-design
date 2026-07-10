@@ -177,8 +177,8 @@ SUB uses 2's complement: `diff = a + ~b + 1`.
 | `tlb_tb.v` | TLB testbench (reset, fill/hit, round-robin eviction, flush) |
 | `mmu.v` | MMU: TLB lookup, cache-mediated PTE walk, translated replay, PTE-store TLB flush, fault freeze |
 | `mmu_tb.v` | MMU testbench with 2-cycle cache responder (walk+replay, hit, PTE-store flush, remap, fault) |
-| `cpu_vm_tb.v` | Full-CPU VM regression: PTE rewrite via identity map, remapped store/load, fault freeze |
-| `vm_program.mem` | 12-instruction VM test program consumed by `cpu_vm_tb.v` |
+| `cpu_vm_tb.v` | Full-CPU VM regression: stale-TLB flush proof, remapped store/load, fault freeze |
+| `vm_program.mem` | 14-instruction VM test program consumed by `cpu_vm_tb.v` |
 | `dbg_cputop.v` | Debug harness for tracing `cpu_top` execution and cache request timing |
 | `basys3_top.v` | Basys3 FPGA wrapper for `cpu_top`: 100 MHz clock divider, debounced reset, single-step mode, LEDs, and 4-digit seven-segment PC display |
 | `assembler.cpp` | Two-pass C++ assembler for the ISA; supports labels, decimal/hex immediates, register operands, and `.mem` output padded to 256 words |

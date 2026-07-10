@@ -35,6 +35,7 @@ module cache_hierarchy_tb;
     // Backing memory: 256 bytes, initialized as mem[i] = i
     reg [7:0] mem [0:255];
     integer k;
+    integer fail_cnt;
 
     initial begin
         for (k = 0; k < 256; k = k + 1)
@@ -87,6 +88,7 @@ module cache_hierarchy_tb;
         $dumpfile("cache_hierarchy.vcd");
         $dumpvars(0, cache_hierarchy_tb);
 
+        fail_cnt = 0;
         rst = 1; cpu_req = 0; cpu_we = 0;
         cpu_addr = 0; cpu_wdata = 0;
         repeat(4) @(posedge clk);
@@ -101,7 +103,7 @@ module cache_hierarchy_tb;
         if (cpu_rdata === mem[8'h00])
             $display("  PASS: rdata=0x%02h", cpu_rdata);
         else
-            $display("  FAIL: expected 0x%02h got 0x%02h", mem[8'h00], cpu_rdata);
+            begin $display("  FAIL: expected 0x%02h got 0x%02h", mem[8'h00], cpu_rdata); fail_cnt = fail_cnt + 1; end
 
         // --------------------------------------------------
         // Test 2: L1 hit — re-read same address, no cache traffic below L1
@@ -111,7 +113,7 @@ module cache_hierarchy_tb;
         if (cpu_rdata === 8'h00)
             $display("  PASS: rdata=0x%02h", cpu_rdata);
         else
-            $display("  FAIL: expected 0x00 got 0x%02h", cpu_rdata);
+            begin $display("  FAIL: expected 0x00 got 0x%02h", cpu_rdata); fail_cnt = fail_cnt + 1; end
 
         // --------------------------------------------------
         // Test 3: L2 hit after L1 eviction
@@ -127,7 +129,7 @@ module cache_hierarchy_tb;
         if (cpu_rdata === 8'hAB)
             $display("  PASS: rdata=0x%02h (L2 served updated value)", cpu_rdata);
         else
-            $display("  FAIL: expected 0xAB got 0x%02h", cpu_rdata);
+            begin $display("  FAIL: expected 0xAB got 0x%02h", cpu_rdata); fail_cnt = fail_cnt + 1; end
 
         // --------------------------------------------------
         // Test 4: L1 → L2 → memory dirty write-back chain
@@ -151,7 +153,7 @@ module cache_hierarchy_tb;
         if (mem[8'h04] === 8'hCD)
             $display("  PASS: dirty write-back correct, mem[0x04]=0x%02h", mem[8'h04]);
         else
-            $display("  FAIL: expected mem[0x04]=0xCD, got 0x%02h", mem[8'h04]);
+            begin $display("  FAIL: expected mem[0x04]=0xCD, got 0x%02h", mem[8'h04]); fail_cnt = fail_cnt + 1; end
 
         // --------------------------------------------------
         // Test 5: cold fill must place every byte at its own offset
@@ -162,17 +164,21 @@ module cache_hierarchy_tb;
         $display("TEST 5: fill byte order across all offsets");
         cpu_request(8'h11, 8'h00, 0);
         if (cpu_rdata === 8'h11) $display("  PASS: rdata=0x%02h", cpu_rdata);
-        else $display("  FAIL: addr 0x11 expected 0x11 got 0x%02h", cpu_rdata);
+        else begin $display("  FAIL: addr 0x11 expected 0x11 got 0x%02h", cpu_rdata); fail_cnt = fail_cnt + 1; end
         cpu_request(8'h12, 8'h00, 0);
         if (cpu_rdata === 8'h12) $display("  PASS: rdata=0x%02h", cpu_rdata);
-        else $display("  FAIL: addr 0x12 expected 0x12 got 0x%02h", cpu_rdata);
+        else begin $display("  FAIL: addr 0x12 expected 0x12 got 0x%02h", cpu_rdata); fail_cnt = fail_cnt + 1; end
         cpu_request(8'h13, 8'h00, 0);
         if (cpu_rdata === 8'h13) $display("  PASS: rdata=0x%02h", cpu_rdata);
-        else $display("  FAIL: addr 0x13 expected 0x13 got 0x%02h", cpu_rdata);
+        else begin $display("  FAIL: addr 0x13 expected 0x13 got 0x%02h", cpu_rdata); fail_cnt = fail_cnt + 1; end
         cpu_request(8'h10, 8'h00, 0);
         if (cpu_rdata === 8'h10) $display("  PASS: rdata=0x%02h", cpu_rdata);
-        else $display("  FAIL: addr 0x10 expected 0x10 got 0x%02h", cpu_rdata);
+        else begin $display("  FAIL: addr 0x10 expected 0x10 got 0x%02h", cpu_rdata); fail_cnt = fail_cnt + 1; end
 
+        if (fail_cnt != 0) begin
+            $display("%0d check(s) FAILED.", fail_cnt);
+            $fatal(1, "cache_hierarchy regression failed");
+        end
         $display("All tests done.");
         $finish;
     end

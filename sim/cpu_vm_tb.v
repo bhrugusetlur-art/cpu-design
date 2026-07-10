@@ -2,9 +2,13 @@
 //  cpu_vm_tb.v  —  Full-CPU virtual memory regression
 //  Runs sim/vm_program.mem on the real cpu_top (datapath + MMU +
 //  TLB + L1/L2 + dmem):
-//    1. writes valid PTE 0x83 to VA/PA 0xF2 (VPN 2 → PPN 3)
-//    2. stores 0x5A at remapped VA 0x21 → PA 0x31, loads it back
-//    3. invalidates PTE 0xF4, then faults on LOAD VA 0x40
+//    1. stores 0x11 at VA 0x21 under the identity map (PA 0x21),
+//       loading VPN 2 → PPN 2 into the TLB
+//    2. rewrites PTE[2] to 0x83 (VPN 2 → PPN 3) — the PTE store
+//       must flush the now-stale TLB entry
+//    3. stores 0x5A at VA 0x21 → must re-walk to PA 0x31 (a stale
+//       TLB hit would clobber PA 0x21 instead), loads it back
+//    4. invalidates PTE 0xF4, then faults on LOAD VA 0x40
 //  Run with:
 //    iverilog -g2012 -o vm_sim sim/cpu_vm_tb.v design/cpu_top.v design/mmu.v \
 //      design/tlb.v design/datapath.v design/cache_hierarchy.v design/l1_cache.v \
@@ -71,6 +75,7 @@ module cpu_vm_tb;
         check8(dut.dp.rf_inst.regs[0], 8'h00, "PTE invalidation value");
         check8(dut.dp.rf_inst.regs[3], 8'h5A, "faulting LOAD did not write R3");
         check8(dut.cache.l1.data[4][1], 8'h5A, "remapped PA 0x31 cached data");
+        check8(dut.cache.l1.data[0][1], 8'h11, "PA 0x21 untouched (stale TLB flushed)");
 
         // Fault state must be frozen: same PC, fault VA, and R3 later
         fault_pc = pc_out;
