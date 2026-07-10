@@ -1,82 +1,132 @@
-# CPU Design on Basys3
+# 8-bit CPU with Caches and Virtual Memory
 
-A small Verilog CPU project targeted at the Digilent Basys3 FPGA. The board top is `design/basys3_top.v`, which wraps `design/cpu_top.v` and shows CPU state on LEDs and the 7-segment display.
+An 8-bit CPU built from scratch in Verilog, running on a Digilent Basys3 FPGA.
+It executes a 12-instruction ISA through a two-level write-back cache
+hierarchy, and every data access is translated through a TLB + MMU with
+software-writable page tables — small enough to read in an afternoon,
+complete enough to page-fault. Every module was built test-first in
+simulation (Icarus Verilog), then verified on the board. Long-term goal:
+tape out a physical chip.
 
-## Repository Layout
+## The Design
 
-- `design/`: synthesizable Verilog sources and the Basys3 XDC constraints file
-- `sim/`: simulation testbenches and simulation-only memory files
-- `programs/`: named FPGA demo programs that can be copied into `program.mem`
+| Property | Value |
+|---|---|
+| Data width | 8-bit |
+| Instructions | 16-bit wide; 12-instruction ISA (MOV, ADD, SUB, AND, OR, NOT, LOAD, STORE, JMP, JZ, HALT) |
+| Registers | R0–R3, PC, zero + carry flags |
+| Memory model | Harvard: 256×16 instruction ROM, 256×8 data RAM |
+| L1 cache | 8 lines, direct-mapped, 4-byte blocks, write-back |
+| L2 cache | 8 sets × 4 ways, LRU, 4-byte blocks, write-back |
+| Virtual memory | 16-byte pages, 4-entry TLB, hardware page-table walker, page faults |
+
+**Execution path.** The datapath fetches, decodes, and executes one
+instruction at a time. LOAD/STORE addresses are *virtual*: they flow through
+the MMU, which looks up a 4-entry TLB and, on a miss, walks the page table
+through the caches (L1 → L2 → data RAM) before replaying the access at the
+physical address. Instruction fetch stays physical (Harvard).
+
+**Virtual memory.** `VA[7:4]` selects one of 16 pages, `VA[3:0]` the byte
+within it. The page table lives at physical `0xF0–0xFF`, one byte per page:
+bit 7 = valid, bits 3:0 = physical page number. Page tables are ordinary
+memory — a STORE into `0xF0–0xFF` flushes the TLB, so software remaps take
+effect on the very next access. Touching a page with an invalid PTE latches
+the faulting address, raises `page_fault`, and freezes the CPU until reset.
+At FPGA configuration the table boots as an identity map, so programs that
+ignore virtual memory run unchanged.
+
+## What Was Built
+
+| Group | Files |
+|---|---|
+| CPU core | `pc.v`, `imem.v`, `control.v`, `reg_file.v`, `alu.v`, `datapath.v` |
+| Memory system | `l1_cache.v`, `l2_cache.v`, `cache_hierarchy.v`, `dmem.v` |
+| Virtual memory | `tlb.v`, `mmu.v` |
+| Integration | `cpu_top.v` (CPU + MMU + caches + RAM), `basys3_top.v` (board wrapper: clocking, debounce, single-step, LED/7-seg debug) |
+| Tooling | `assembler.cpp` — two-pass assembler producing `.mem` images |
+
+Repository layout:
+
+- `design/`: synthesizable Verilog and the Basys3 XDC constraints file
+- `sim/`: one testbench per module plus full-CPU regressions and their memory files
+- `programs/`: named demo programs that can be copied into `program.mem`
 - `tests/`: assembler test script
-- `program.mem`: active FPGA instruction memory image used by `basys3_top.v`
+- `program.mem`: the active FPGA instruction image used by `basys3_top.v`
 
-## Basys3 Controls
+## How It Was Tested
+
+Development was test-first: each module got a failing testbench, then the
+implementation, from the ALU all the way up to full-CPU regressions — 16
+suites in total, all passing. The two most interesting ones:
+
+- `sim/cpu_programs_tb.v` runs the three demo programs on the real
+  CPU + caches and checks final PC/register values.
+- `sim/cpu_vm_tb.v` proves virtual memory end-to-end: it preloads a TLB
+  entry, rewrites the PTE (which must flush the stale entry), stores and
+  loads through the remapped page, then deliberately page-faults and checks
+  the CPU froze with the right fault address.
+
+Icarus Verilog pattern (full per-module command list in `AGENTS.md`):
+
+```bash
+iverilog -g2012 -o vm_sim sim/cpu_vm_tb.v design/cpu_top.v design/mmu.v design/tlb.v \
+  design/datapath.v design/cache_hierarchy.v design/l1_cache.v design/l2_cache.v \
+  design/dmem.v design/pc.v design/imem.v design/control.v design/reg_file.v \
+  design/alu.v && vvp vm_sim
+```
+
+Vivado simulator flow (Windows):
+
+```text
+xvlog -sv sim/cpu_programs_tb.v design/cpu_top.v design/mmu.v design/tlb.v design/datapath.v design/cache_hierarchy.v design/l1_cache.v design/l2_cache.v design/dmem.v design/pc.v design/imem.v design/control.v design/reg_file.v design/alu.v
+xelab -debug typical cpu_programs_tb -s cpu_programs_sim
+xsim cpu_programs_sim -runall
+```
+
+(Substitute `sim/cpu_vm_tb.v` and `cpu_vm_tb` to run the virtual memory
+regression the same way.)
+
+## Verification Status
+
+Everything below passes in simulation **and** has been verified on the
+Basys3 board:
+
+| Area | Hardware-verified |
+|---|---|
+| All 12 ISA instructions (incl. JZ taken/not taken) | ✅ |
+| Cache miss stall behavior | ✅ |
+| Register / PC / memory-request debug views | ✅ |
+| **Virtual memory: TLB remap, PTE-store flush, page-fault freeze + fault view** | ✅ |
+
+## Running It on the Board
+
+### Controls
 
 - `btnC`: reset
 - `btnR`: single-step pulse when `SW1:SW0 = 11`
-- `SW1:SW0`: CPU clock mode
-  - `00`: 1 Hz
-  - `01`: 2 Hz
-  - `10`: 4 Hz
-  - `11`: single-step with `btnR`
-- `SW3:SW2`: register select when `SW5:SW4 = 00`
-  - `00`: R0
-  - `01`: R1
-  - `10`: R2
-  - `11`: R3
-- `SW5:SW4`: LED debug view
-  - `00`: register view
-  - `01`: PC view
-  - `10`: memory/cache request view
-  - `11`: page-fault/flags view
+- `SW1:SW0`: CPU clock — `00` 1 Hz, `01` 2 Hz, `10` 4 Hz, `11` single-step
+- `SW3:SW2`: register select (register view only)
+- `SW5:SW4`: LED debug view (below)
 
-## LED Output
+### LED views
 
-In register view (`SW5:SW4 = 00`):
+| `SW5:SW4` | View | LEDs |
+|---|---|---|
+| `00` | Register | `LED[7:0]` = register picked by `SW3:SW2`, `LED[8]` halt, `LED[9]` heartbeat |
+| `01` | PC | `LED[7:0]` = PC, `LED[8]` halt, `LED[9]` heartbeat |
+| `10` | Memory/cache | `LED[7:0]` = data address, `LED[10]` request, `LED[11]` write, `LED[12]` stall, `LED[8]` halt, `LED[9]` heartbeat |
+| `11` | Page fault | `LED[15:8]` = faulting VA, `LED[4]` page fault, `LED[3]` zero flag, `LED[2]` stall, `LED[1]` heartbeat, `LED[0]` halt |
 
-- `LED[7:0]`: selected register value
-- `LED[8]`: halt
-- `LED[9]`: CPU clock heartbeat
+Read `LED[7:0]` as binary, e.g. `0D = 0000 1101` → LED3, LED2, LED0 on.
 
-In PC view (`SW5:SW4 = 01`):
+### Demo programs
 
-- `LED[7:0]`: `pc_out`
-- `LED[8]`: halt
-- `LED[9]`: CPU clock heartbeat
+The active program is `program.mem` (currently the virtual memory demo). To
+switch demos, copy one of the files below into `program.mem` and rebuild the
+bitstream (reset the synthesis/implementation runs if Vivado doesn't pick up
+the change).
 
-In memory/cache request view (`SW5:SW4 = 10`):
-
-- `LED[7:0]`: current CPU data-memory address
-- `LED[8]`: halt
-- `LED[9]`: CPU clock heartbeat
-- `LED[10]`: cache request
-- `LED[11]`: memory write enable
-- `LED[12]`: memory stall
-
-In page-fault/flags view (`SW5:SW4 = 11`):
-
-- `LED[15:8]`: faulting virtual address (`debug_fault_va`)
-- `LED[4]`: page fault (`debug_page_fault`)
-- `LED[3]`: saved zero flag
-- `LED[2]`: memory stall
-- `LED[1]`: CPU clock heartbeat
-- `LED[0]`: halt
-
-Read `LED[7:0]` as binary. For example:
-
-```text
-0D = 0000 1101 -> LED3, LED2, and LED0 on
-03 = 0000 0011 -> LED1 and LED0 on
-FF = 1111 1111 -> LED7 through LED0 on
-```
-
-## FPGA Demo Programs
-
-The active FPGA program is `program.mem`. To run another demo, copy one of the files from `programs/` into `program.mem`, then regenerate the bitstream. If Vivado does not pick up the changed memory contents, reset the synthesis/implementation runs and rebuild.
-
-### Default: cache/store/load demo
-
-File: `programs/cache_store_load.mem`
+#### Cache/store/load — `programs/cache_store_load.mem`
 
 ```text
 100A
@@ -88,18 +138,11 @@ File: `programs/cache_store_load.mem`
 F000
 ```
 
-Expected behavior:
+- 7-segment PC shows `00 → 01 → 02 → 03 → 04`, pauses at `04` for the STORE
+  cold miss, then halts at `H06`.
+- Final registers: R0 = `0D`, R1 = `03`, R2 = `0D`, R3 = `0D`.
 
-- 7-segment PC sequence shows `00 -> 01 -> 02 -> 03 -> 04`, pauses at `04` for the STORE cold cache miss, then reaches `H06`.
-- Final register values:
-  - `SW3:SW2 = 00`: R0 = `0D`
-  - `SW3:SW2 = 01`: R1 = `03`
-  - `SW3:SW2 = 10`: R2 = `0D`
-  - `SW3:SW2 = 11`: R3 = `0D`
-
-### ALU operations demo
-
-File: `programs/alu_ops.mem`
+#### ALU operations — `programs/alu_ops.mem`
 
 ```text
 100F
@@ -112,16 +155,9 @@ File: `programs/alu_ops.mem`
 F000
 ```
 
-Expected final register values:
+- Final registers: R0 = `0C`, R1 = `03`, R2 = `03`, R3 = `FF`.
 
-- `SW3:SW2 = 00`: R0 = `0C`
-- `SW3:SW2 = 01`: R1 = `03`
-- `SW3:SW2 = 10`: R2 = `03`
-- `SW3:SW2 = 11`: R3 = `FF`
-
-### Branch and saved-zero-flag demo
-
-File: `programs/branch_jz.mem`
+#### Branch and saved zero flag — `programs/branch_jz.mem`
 
 ```text
 1001
@@ -141,20 +177,10 @@ A00D
 F000
 ```
 
-This verifies both `JZ` taken and `JZ` not taken using the saved zero flag from the previous ALU instruction.
+- Exercises `JZ` taken and not taken using the saved zero flag; halts around `H0E`.
+- Final registers: R0 = `02`, R1 = `03`, R2 = `02`, R3 = `04`.
 
-Expected final register values:
-
-- `SW3:SW2 = 00`: R0 = `02`
-- `SW3:SW2 = 01`: R1 = `03`
-- `SW3:SW2 = 10`: R2 = `02`
-- `SW3:SW2 = 11`: R3 = `04`
-
-Expected halt display: around `H0E`.
-
-### Virtual memory remap and page-fault demo
-
-File: `sim/vm_program.mem`
+#### Virtual memory remap and page fault — `sim/vm_program.mem`
 
 ```text
 1821
@@ -178,58 +204,15 @@ PTE[2] so VPN 2 maps to physical page 3 (the PTE store flushes the TLB),
 stores/loads through the remapped VA `0x21` → PA `0x31`, invalidates PTE[4],
 and finally loads from VA `0x40` — which page-faults on purpose.
 
-Expected behavior:
+Expected behavior (hardware-verified):
 
 - The PC display pauses at each LOAD/STORE for the page walk, then freezes
   at `0D` forever (no `H` — the CPU is faulted, not halted). Reset restarts it.
 - In fault view (`SW5:SW4 = 11`): `LED[15:8] = 0100 0000` (the faulting
   VA `0x40`, LED14 on) and `LED[4]` on (page fault).
-- Final register values: R0 = `00`, R1 = `F4`, R2 = `40`, R3 = `5A`
+- Final registers: R0 = `00`, R1 = `F4`, R2 = `40`, R3 = `5A`
   (R3 proves the faulting LOAD never wrote back).
 
 Note: PTE writes survive reset (the page table is initialized at FPGA
-configuration, not reset), so this demo rewrites its own PTEs at startup
-and behaves the same on every run.
-
-## Simulation Regression
-
-`cpu_programs_tb.v` runs all three demo programs in simulation and checks their expected final PC/register values:
-
-- `programs/cache_store_load.mem`
-- `programs/alu_ops.mem`
-- `programs/branch_jz.mem`
-
-Vivado simulator flow:
-
-```text
-xvlog -sv sim/cpu_programs_tb.v design/cpu_top.v design/mmu.v design/tlb.v design/datapath.v design/cache_hierarchy.v design/l1_cache.v design/l2_cache.v design/dmem.v design/pc.v design/imem.v design/control.v design/reg_file.v design/alu.v
-xelab -debug typical cpu_programs_tb -s cpu_programs_sim
-xsim cpu_programs_sim -runall
-```
-
-`cpu_vm_tb.v` covers the virtual memory path (TLB fill, PTE-store flush,
-remapped store/load, page-fault freeze) with the same file list plus
-`sim/cpu_vm_tb.v` in place of the programs testbench.
-
-The regression should report all checks passed.
-
-## Hardware-Verified Features
-
-These features have been checked on the Basys3 FPGA:
-
-- MOV immediate
-- MOV register
-- ADD
-- SUB
-- AND
-- OR
-- NOT
-- LOAD
-- STORE
-- HALT
-- JMP
-- JZ taken
-- JZ not taken
-- cache miss stall behavior
-- register debug LEDs
-- front-panel debug selector (`SW5:SW4`)
+configuration, not reset), so this demo rewrites its own PTEs at startup and
+behaves the same on every run.
