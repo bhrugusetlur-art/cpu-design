@@ -175,6 +175,7 @@ SUB uses 2's complement: `diff = a + ~b + 1`.
 | `assembler.cpp` | Two-pass C++ assembler for the ISA; supports labels, decimal/hex immediates, register operands, and `.mem` output padded to 256 words |
 | `tests/run_assembler_tests.sh` | Assembler regression tests for encoding, labels, output padding, and error reporting |
 | `docs/superpowers/specs/2026-07-09-virtual-memory-design.md` | Approved VM v1 design: TLB, cache-mediated page walk, PTE format, PTE-store flush, boot image, and tests |
+| `docs/superpowers/plans/2026-07-09-virtual-memory.md` | TDD implementation sequence for VM v1, from TLB through CPU-level fault regression |
 
 ---
 
