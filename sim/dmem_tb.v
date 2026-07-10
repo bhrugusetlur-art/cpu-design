@@ -55,6 +55,20 @@ module dmem_tb;
         @(posedge clk); #1;
 
         // --------------------------------------------------
+        // Test 0: identity PTE boot image at 0xF0-0xFF
+        // --------------------------------------------------
+        $display("TEST 0: identity PTE boot image");
+        if (dut.mem[8'hF0] !== 8'h80 ||
+            dut.mem[8'hF5] !== 8'h85 ||
+            dut.mem[8'hFF] !== 8'h8F) begin
+            $display("  FAIL: identity PTE boot image missing");
+            fail_cnt = fail_cnt + 1;
+        end else begin
+            $display("  PASS: identity PTE boot image");
+            pass_cnt = pass_cnt + 1;
+        end
+
+        // --------------------------------------------------
         // Test 1: write then read back a single address
         // --------------------------------------------------
         $display("TEST 1: write and read back");
