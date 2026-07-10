@@ -152,6 +152,45 @@ Expected final register values:
 
 Expected halt display: around `H0E`.
 
+### Virtual memory remap and page-fault demo
+
+File: `sim/vm_program.mem`
+
+```text
+1821
+1c11
+8b00
+1083
+14f2
+8400
+1c5a
+8b00
+7200
+1000
+14f4
+8400
+1840
+7e00
+```
+
+The program stores through VA `0x21` under the boot identity map, rewrites
+PTE[2] so VPN 2 maps to physical page 3 (the PTE store flushes the TLB),
+stores/loads through the remapped VA `0x21` → PA `0x31`, invalidates PTE[4],
+and finally loads from VA `0x40` — which page-faults on purpose.
+
+Expected behavior:
+
+- The PC display pauses at each LOAD/STORE for the page walk, then freezes
+  at `0D` forever (no `H` — the CPU is faulted, not halted). Reset restarts it.
+- In fault view (`SW5:SW4 = 11`): `LED[15:8] = 0100 0000` (the faulting
+  VA `0x40`, LED14 on) and `LED[4]` on (page fault).
+- Final register values: R0 = `00`, R1 = `F4`, R2 = `40`, R3 = `5A`
+  (R3 proves the faulting LOAD never wrote back).
+
+Note: PTE writes survive reset (the page table is initialized at FPGA
+configuration, not reset), so this demo rewrites its own PTEs at startup
+and behaves the same on every run.
+
 ## Simulation Regression
 
 `cpu_programs_tb.v` runs all three demo programs in simulation and checks their expected final PC/register values:
@@ -163,10 +202,14 @@ Expected halt display: around `H0E`.
 Vivado simulator flow:
 
 ```text
-xvlog -sv sim/cpu_programs_tb.v design/cpu_top.v design/datapath.v design/cache_hierarchy.v design/l1_cache.v design/l2_cache.v design/dmem.v design/pc.v design/imem.v design/control.v design/reg_file.v design/alu.v
+xvlog -sv sim/cpu_programs_tb.v design/cpu_top.v design/mmu.v design/tlb.v design/datapath.v design/cache_hierarchy.v design/l1_cache.v design/l2_cache.v design/dmem.v design/pc.v design/imem.v design/control.v design/reg_file.v design/alu.v
 xelab -debug typical cpu_programs_tb -s cpu_programs_sim
 xsim cpu_programs_sim -runall
 ```
+
+`cpu_vm_tb.v` covers the virtual memory path (TLB fill, PTE-store flush,
+remapped store/load, page-fault freeze) with the same file list plus
+`sim/cpu_vm_tb.v` in place of the programs testbench.
 
 The regression should report all checks passed.
 
