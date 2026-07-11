@@ -1,8 +1,5 @@
-CLAUDE.md
-AGENTS.md
-docs/
-
 # Generated simulation outputs
+/build/
 *_sim
 *_tb
 *.vcd
