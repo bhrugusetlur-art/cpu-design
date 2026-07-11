@@ -25,6 +25,7 @@ module reg_file_tb;
 
     initial clk = 0;
     always #5 clk = ~clk;
+    integer fail_cnt;
 
     // Write rd_data into rd_addr on next rising edge
     task write_reg;
@@ -44,7 +45,7 @@ module reg_file_tb;
 
         rst = 1; wr_en = 0;
         rd_addr = 0; rd_data = 0;
-        rs1_addr = 0; rs2_addr = 0;
+        rs1_addr = 0; rs2_addr = 0; fail_cnt = 0;
         repeat(2) @(posedge clk);
         rst = 0;
         @(posedge clk); #1;
@@ -64,6 +65,7 @@ module reg_file_tb;
                 end
             end
             if (ok) $display("  PASS: R0–R3 all 0x00");
+            else fail_cnt = fail_cnt + 1;
         end
 
         // --------------------------------------------------
@@ -87,6 +89,7 @@ module reg_file_tb;
             rs1_addr = 3; #1;
             if (rs1_data !== 8'hDD) begin $display("  FAIL R3: got 0x%02h", rs1_data); ok=0; end
             if (ok) $display("  PASS: R0=0xAA R1=0xBB R2=0xCC R3=0xDD");
+            else fail_cnt = fail_cnt + 1;
         end
 
         // --------------------------------------------------
@@ -96,9 +99,11 @@ module reg_file_tb;
         rs1_addr = 2'd0; rs2_addr = 2'd3; #1;
         if (rs1_data === 8'hAA && rs2_data === 8'hDD)
             $display("  PASS: port1=0x%02h port2=0x%02h", rs1_data, rs2_data);
-        else
+        else begin
             $display("  FAIL: port1=0x%02h (want 0xAA)  port2=0x%02h (want 0xDD)",
                      rs1_data, rs2_data);
+            fail_cnt = fail_cnt + 1;
+        end
 
         // --------------------------------------------------
         // Test 4: wr_en=0 does not modify register
@@ -110,8 +115,10 @@ module reg_file_tb;
         rs1_addr = 2'd1; #1;
         if (rs1_data === 8'hBB)
             $display("  PASS: R1 still 0x%02h", rs1_data);
-        else
+        else begin
             $display("  FAIL: R1 = 0x%02h, expected 0xBB", rs1_data);
+            fail_cnt = fail_cnt + 1;
+        end
 
         // --------------------------------------------------
         // Test 5: write and read same register — old value
@@ -126,15 +133,20 @@ module reg_file_tb;
         #1;                        // combinational reads settle before clock edge
         if (rs1_data === 8'hCC)
             $display("  PASS: read sees old value 0x%02h during write cycle", rs1_data);
-        else
+        else begin
             $display("  FAIL: expected 0xCC during write, got 0x%02h", rs1_data);
+            fail_cnt = fail_cnt + 1;
+        end
         @(posedge clk); #1; wr_en = 0;
         if (rs1_data === 8'h42)
             $display("  PASS: read sees new value 0x%02h after clock edge", rs1_data);
-        else
+        else begin
             $display("  FAIL: expected 0x42 after write, got 0x%02h", rs1_data);
+            fail_cnt = fail_cnt + 1;
+        end
 
         $display("All tests done.");
+        if (fail_cnt != 0) $fatal(1, "Register file regression failed");
         $finish;
     end
 

@@ -43,6 +43,7 @@ module imem_tb;
         check_instr(8'd4, 16'hF000, "addr 4");
 
         $display("\n%0d passed, %0d failed.", pass_cnt, fail_cnt);
+        if (fail_cnt != 0) $fatal(1, "IMEM regression failed");
         $finish;
     end
 

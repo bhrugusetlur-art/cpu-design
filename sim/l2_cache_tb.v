@@ -34,6 +34,7 @@ module l2_cache_tb;
     // Backing memory: 256 bytes, initialized as mem_store[i] = i
     reg [7:0] mem_store [0:255];
     integer k;
+    integer fail_cnt;
 
     initial begin
         for (k = 0; k < 256; k = k + 1)
@@ -99,7 +100,7 @@ module l2_cache_tb;
         $dumpfile("l2_cache.vcd");
         $dumpvars(0, l2_cache_tb);
 
-        rst = 1; cpu_re = 0; cpu_we = 0;
+        rst = 1; cpu_re = 0; cpu_we = 0; fail_cnt = 0;
         cpu_addr = 0; cpu_wdata = 0;
         repeat(4) @(posedge clk);
         rst = 0;
@@ -112,8 +113,7 @@ module l2_cache_tb;
         l2_read(8'h00);
         if (cpu_rdata === mem_store[8'h00])
             $display("  PASS: rdata=0x%02h", cpu_rdata);
-        else
-            $display("  FAIL: expected 0x%02h got 0x%02h", mem_store[8'h00], cpu_rdata);
+        else begin $display("  FAIL: expected 0x%02h got 0x%02h", mem_store[8'h00], cpu_rdata); fail_cnt = fail_cnt + 1; end
 
         // --------------------------------------------------
         // Test 2: hit — re-read same address, no memory traffic
@@ -122,8 +122,7 @@ module l2_cache_tb;
         l2_read(8'h00);
         if (cpu_rdata === 8'h00)
             $display("  PASS: rdata=0x%02h", cpu_rdata);
-        else
-            $display("  FAIL: expected 0x00 got 0x%02h", cpu_rdata);
+        else begin $display("  FAIL: expected 0x00 got 0x%02h", cpu_rdata); fail_cnt = fail_cnt + 1; end
 
         // --------------------------------------------------
         // Test 3: write hit then read back
@@ -133,8 +132,7 @@ module l2_cache_tb;
         l2_read(8'h00);
         if (cpu_rdata === 8'hAB)
             $display("  PASS: rdata=0x%02h", cpu_rdata);
-        else
-            $display("  FAIL: expected 0xAB got 0x%02h", cpu_rdata);
+        else begin $display("  FAIL: expected 0xAB got 0x%02h", cpu_rdata); fail_cnt = fail_cnt + 1; end
 
         // --------------------------------------------------
         // Test 4: LRU eviction with dirty write-back
@@ -156,10 +154,10 @@ module l2_cache_tb;
         // l2_read returns after fill of 0x80 is done, so writeback of way 0 is complete.
         if (mem_store[8'h00] === 8'hAB)
             $display("  PASS: dirty write-back correct, mem[0x00]=0x%02h", mem_store[8'h00]);
-        else
-            $display("  FAIL: expected mem[0x00]=0xAB, got 0x%02h", mem_store[8'h00]);
+        else begin $display("  FAIL: expected mem[0x00]=0xAB, got 0x%02h", mem_store[8'h00]); fail_cnt = fail_cnt + 1; end
 
         $display("All tests done.");
+        if (fail_cnt != 0) $fatal(1, "L2 cache regression failed");
         $finish;
     end
 

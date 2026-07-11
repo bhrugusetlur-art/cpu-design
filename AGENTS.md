@@ -1,6 +1,6 @@
 # 8-bit CPU with Cache Hierarchy
 
-> **For Codex:** After every session where files are created or modified, update this file — mark completed modules in the build progress table, add new files to the file reference section, and update any specs that changed. Keep this file accurate so future sessions have correct context.
+> **Maintenance:** whenever files are created or modified, update this file — mark completed modules in the build progress table, add new files to the file reference section, and update any specs that changed. Keep this file accurate so it stays a correct map of the project.
 
 ## Goal
 Build a fully working 8-bit CPU in Verilog, simulate and test every module, then **physically print/tape out the chip**. After the CPU and cache are complete, add virtual memory (TLB + MMU).
@@ -184,6 +184,7 @@ SUB uses 2's complement: `diff = a + ~b + 1`.
 | `basys3_top.v` | Basys3 FPGA wrapper for `cpu_top`: 100 MHz clock divider, debounced reset, single-step mode, LEDs, and 4-digit seven-segment PC display |
 | `assembler.cpp` | Two-pass C++ assembler for the ISA; supports labels, decimal/hex immediates, register operands, and `.mem` output padded to 256 words |
 | `tests/run_assembler_tests.sh` | Assembler regression tests for encoding, labels, output padding, and error reporting |
+| `Makefile` | Builds all 15 Verilog simulations into `build/`; `make test` runs every testbench plus assembler regressions |
 | `docs/superpowers/specs/2026-07-09-virtual-memory-design.md` | Approved VM v1 design: TLB, cache-mediated page walk, PTE format, PTE-store flush, boot image, and tests |
 | `docs/superpowers/plans/2026-07-09-virtual-memory.md` | TDD implementation sequence for VM v1, from TLB through CPU-level fault regression |
 | `openroad/config.mk` | ORFS Sky130 HD configuration for hardening `cpu_top` as a core block; 15% initial utilization and 20% slew/cap repair margins; generated files go under `openroad/work/` |
@@ -211,6 +212,9 @@ SUB uses 2's complement: `diff = a + ~b + 1`.
 
 ## How to run any testbench
 ```bash
+# Run the complete regression suite from the repository root:
+make test
+
 # Pattern: iverilog -g2012 -o <sim> sim/<tb>.v design/<dut>.v [dependencies] && vvp <sim>
 # Full-CPU deps (used by top/programs/vm below):
 #   design/cpu_top.v design/mmu.v design/tlb.v design/datapath.v design/cache_hierarchy.v

@@ -94,6 +94,7 @@ module alu_tb;
         check(8'h55, 0, 0, "~0xAA = 0x55");
 
         $display("\n%0d passed, %0d failed.", pass_cnt, fail_cnt);
+        if (fail_cnt != 0) $fatal(1, "ALU regression failed");
         $finish;
     end
 

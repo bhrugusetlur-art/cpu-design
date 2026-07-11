@@ -34,6 +34,7 @@ module l1_cache_tb;
     // Stub L2: 256 bytes, responds 2 cycles after request
     reg [7:0] l2_mem [0:255];
     integer k;
+    integer fail_cnt;
 
     initial begin
         for (k = 0; k < 256; k = k + 1)
@@ -86,7 +87,7 @@ module l1_cache_tb;
         $dumpfile("l1_cache.vcd");
         $dumpvars(0, l1_cache_tb);
 
-        rst = 1; cpu_req = 0; cpu_we = 0;
+        rst = 1; cpu_req = 0; cpu_we = 0; fail_cnt = 0;
         cpu_addr = 0; cpu_wdata = 0;
         repeat(4) @(posedge clk);
         rst = 0;
@@ -97,16 +98,14 @@ module l1_cache_tb;
         cpu_request(8'h00, 8'h00, 0);
         if (cpu_rdata === l2_mem[8'h00])
             $display("  PASS: rdata=0x%02h", cpu_rdata);
-        else
-            $display("  FAIL: expected 0x%02h got 0x%02h", l2_mem[8'h00], cpu_rdata);
+        else begin $display("  FAIL: expected 0x%02h got 0x%02h", l2_mem[8'h00], cpu_rdata); fail_cnt = fail_cnt + 1; end
 
         // Test 2: same address — should hit, no L2 traffic
         $display("TEST 2: repeat read (should hit)");
         cpu_request(8'h00, 8'h00, 0);
         if (cpu_rdata === 8'h00)
             $display("  PASS: rdata=0x%02h", cpu_rdata);
-        else
-            $display("  FAIL: expected 0x00 got 0x%02h", cpu_rdata);
+        else begin $display("  FAIL: expected 0x00 got 0x%02h", cpu_rdata); fail_cnt = fail_cnt + 1; end
 
         // Test 3: write hit then read back
         $display("TEST 3: write to cached line addr=0x00, data=0xAB");
@@ -114,8 +113,7 @@ module l1_cache_tb;
         cpu_request(8'h00, 8'h00, 0);
         if (cpu_rdata === 8'hAB)
             $display("  PASS: rdata=0x%02h", cpu_rdata);
-        else
-            $display("  FAIL: expected 0xAB got 0x%02h", cpu_rdata);
+        else begin $display("  FAIL: expected 0xAB got 0x%02h", cpu_rdata); fail_cnt = fail_cnt + 1; end
 
         // Test 4: conflict miss — addr 0x20 maps to same index 0, different tag
         // forces writeback of dirty 0x00 line before filling new line
@@ -124,10 +122,10 @@ module l1_cache_tb;
         repeat(4) @(posedge clk); // let writeback complete to l2_mem
         if (l2_mem[8'h00] === 8'hAB)
             $display("  PASS: writeback correct, l2_mem[0]=0x%02h", l2_mem[8'h00]);
-        else
-            $display("  FAIL: expected l2_mem[0]=0xAB, got 0x%02h", l2_mem[8'h00]);
+        else begin $display("  FAIL: expected l2_mem[0]=0xAB, got 0x%02h", l2_mem[8'h00]); fail_cnt = fail_cnt + 1; end
 
         $display("All tests done.");
+        if (fail_cnt != 0) $fatal(1, "L1 cache regression failed");
         $finish;
     end
 

@@ -118,6 +118,7 @@ module pc_tb;
         check_pc(8'h41, "pc=0x41 frozen (halt cycle 2)");
 
         $display("\n%0d passed, %0d failed.", pass_cnt, fail_cnt);
+        if (fail_cnt != 0) $fatal(1, "PC regression failed");
         $finish;
     end
 

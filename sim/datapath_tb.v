@@ -91,7 +91,7 @@ module datapath_tb;
 
         if (!halt) begin
             $display("FAIL: CPU did not halt — check program or wiring");
-            $finish;
+            fail_cnt = fail_cnt + 1;
         end
         $display("CPU halted at PC=0x%02h", pc_out);
 
@@ -117,6 +117,7 @@ module datapath_tb;
         end
 
         $display("\n%0d passed, %0d failed.", pass_cnt, fail_cnt);
+        if (fail_cnt != 0) $fatal(1, "Datapath regression failed");
         $finish;
     end
 

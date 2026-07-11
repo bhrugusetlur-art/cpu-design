@@ -86,7 +86,7 @@ module cpu_top_tb;
 
         if (!halt) begin
             $display("FAIL: CPU did not halt within 500 cycles");
-            $finish;
+            fail_cnt = fail_cnt + 1;
         end
 
         $display("CPU halted at PC=0x%02h after %0d cycles", pc_out, cycles);
@@ -117,6 +117,7 @@ module cpu_top_tb;
         end
 
         $display("\n%0d passed, %0d failed.", pass_cnt, fail_cnt);
+        if (fail_cnt != 0) $fatal(1, "CPU top regression failed");
         $finish;
     end
 

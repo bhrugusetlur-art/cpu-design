@@ -96,16 +96,21 @@ module control_tb;
         instr = 16'h2400; #1;  // ADD R1, R0
         if (rd_addr===2'd1 && rs1_addr===2'd0)
             $display("  PASS  rd_addr=R1 rs1_addr=R0");
-        else
+        else begin
             $display("  FAIL  rd=%0d rs1=%0d", rd_addr, rs1_addr);
+            fail_cnt = fail_cnt + 1;
+        end
 
         instr = 16'h9037; #1;  // JMP 0x37
         if (imm===8'h37)
             $display("  PASS  imm=0x%02h from JMP instr", imm);
-        else
+        else begin
             $display("  FAIL  imm=0x%02h want 0x37", imm);
+            fail_cnt = fail_cnt + 1;
+        end
 
         $display("\n%0d passed, %0d failed.", pass_cnt, fail_cnt);
+        if (fail_cnt != 0) $fatal(1, "Control regression failed");
         $finish;
     end
 

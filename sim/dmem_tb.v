@@ -136,6 +136,7 @@ module dmem_tb;
         end
 
         $display("\n%0d passed, %0d failed.", pass_cnt, fail_cnt);
+        if (fail_cnt != 0) $fatal(1, "DMEM regression failed");
         $finish;
     end
 
