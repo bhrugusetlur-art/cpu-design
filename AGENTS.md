@@ -186,6 +186,7 @@ SUB uses 2's complement: `diff = a + ~b + 1`.
 | `tests/run_assembler_tests.sh` | Assembler regression tests for encoding, labels, output padding, and error reporting |
 | `tests/run_lvs_deck_tests.sh` | Structural regression for the project Sky130 LVS deck: pin-purpose connectivity, report output, split-cell normalization, constant-cell shorts, and tap-cell substrate restoration |
 | `Makefile` | Builds all 15 Verilog simulations into `build/`; `make test` runs every testbench plus assembler and LVS-deck regressions |
+| `docs/specs/2026-07-18-readme-redesign.md` | Approved portfolio-first README redesign: content order, real GDS and simulation-derived FPGA visuals, documentation cleanup, accuracy rules, and verification requirements |
 | `docs/superpowers/specs/2026-07-09-virtual-memory-design.md` | Approved VM v1 design: TLB, cache-mediated page walk, PTE format, PTE-store flush, boot image, and tests |
 | `docs/superpowers/plans/2026-07-09-virtual-memory.md` | TDD implementation sequence for VM v1, from TLB through CPU-level fault regression |
 | `graphify-out/` | Git-ignored generated project knowledge graph: interactive HTML, audit report, GraphRAG JSON, extraction cache, and incremental-update metadata |
