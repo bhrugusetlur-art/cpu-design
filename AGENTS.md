@@ -127,6 +127,7 @@ SUB uses 2's complement: `diff = a + ~b + 1`.
 | 14 | `tlb.v` | ✅ done | `tlb_tb.v` passes |
 | 15 | `mmu.v` | ✅ done | `mmu_tb.v` passes |
 | 16 | VM integration | ✅ done | `cpu_vm_tb.v` passes |
+| 17 | Sky130 ORFS core hardening | 🟡 core GDS generated | ORFS/STA/route DRC/KLayout DRC clean; LVS unresolved |
 
 ---
 
@@ -185,6 +186,26 @@ SUB uses 2's complement: `diff = a + ~b + 1`.
 | `tests/run_assembler_tests.sh` | Assembler regression tests for encoding, labels, output padding, and error reporting |
 | `docs/superpowers/specs/2026-07-09-virtual-memory-design.md` | Approved VM v1 design: TLB, cache-mediated page walk, PTE format, PTE-store flush, boot image, and tests |
 | `docs/superpowers/plans/2026-07-09-virtual-memory.md` | TDD implementation sequence for VM v1, from TLB through CPU-level fault regression |
+| `openroad/config.mk` | ORFS Sky130 HD configuration for hardening `cpu_top` as a core block; 15% initial utilization and 20% slew/cap repair margins; generated files go under `openroad/work/` |
+| `openroad/constraint.sdc` | Initial ASIC timing constraints: 10 MHz core clock, async-reset false path, 5 ns output delay |
+| `openroad/README.md` | ORFS setup/run instructions, final GDS hash/metrics, stream-out fix, verification status, backup guidance, and tapeout limitations |
+
+---
+
+## ASIC/OpenROAD status
+
+- Physical-design target: ORFS `sky130hd`, top module `cpu_top`, 10 MHz clock, 15% initial core utilization.
+- Windows WSL 2.7.3, a dedicated Ubuntu 22.04 distribution, Docker 29.1.3, and the official `openroad/orfs:latest` image were installed on 2026-07-17.
+- ORFS synthesis passes: 12,778 Sky130 HD cells, 178,941.619 um^2 cell area, including 3,824 sequential cells. All inferred memories map to standard cells.
+- The first physical run at 35% initial utilization was congested. The final 15%/20%-repair-margin run completed RTL-to-GDS with about 19% final utilization, 90.29 ns setup slack at 10 MHz, and zero setup/hold/slew/cap, detailed-route DRC, antenna, and standalone KLayout DRC violations.
+- Via-complete final GDS: `openroad/work/results/sky130hd/cpu8/base/6_final.gds`, 34,672,628 bytes, SHA-256 `EB8056AF757277F4828EB0E29479399363749B9FE188F15C5EBE53F8C93879CD`.
+- Stream-out required correcting the generated `klayout.lyt` LEF path from `/workspace/...` to the actual Docker mount `/work/...`; the stale path omitted 138,398 default-via references. Always reject a merge log containing `Invalid via name` warnings.
+- Standalone KLayout LVS is unresolved. Generated CDL normalization allowed extraction, but the bundled deck did not promote the 82 signal/debug GDS labels to top-level pins and reported a mismatch. This is a tapeout blocker even though KLayout DRC is clean.
+- This run hardens a core block only. `basys3_top.v` and `Basys3_CPU.xdc` are FPGA-only and are excluded.
+- The active `program.mem` is consumed by `imem.v` during synthesis, making that program part of the resulting hardware implementation unless the instruction memory architecture is replaced.
+- The `dmem.v` identity-PTE `initial` block is still a known tapeout blocker; add an explicit boot ROM/loader before fabrication.
+- The inferred memories and cache arrays currently have no foundry SRAM macro mappings and may synthesize into standard cells.
+- `openroad/work/` is Git-ignored and must be backed up separately to retain generated databases, reports, images, and GDS files.
 
 ---
 
