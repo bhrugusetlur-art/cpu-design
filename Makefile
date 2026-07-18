@@ -68,6 +68,7 @@ test: $(SIM_BINS)
 		$(VVP) $(BUILD_DIR)/$$sim; \
 	done
 	bash tests/run_assembler_tests.sh
+	bash tests/run_lvs_deck_tests.sh
 
 clean:
 	rm -rf $(BUILD_DIR)

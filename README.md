@@ -103,10 +103,11 @@ Basys3 board:
 
 A Sky130 HD core-block layout has been generated at
 `openroad/work/results/sky130hd/cpu8/base/6_final.gds`. It meets the 10 MHz
-timing target and passes OpenROAD routing checks plus standalone KLayout DRC.
-It is not tapeout-ready: LVS remains unresolved, and a padframe, I/O/ESD cells,
-shuttle harness, memory/boot architecture, foundry signoff, and packaging are
-still required. See `openroad/README.md` for the exact GDS hash and reports.
+timing target and passes OpenROAD routing checks, standalone KLayout DRC, and
+project-deck KLayout electrical LVS. It is not tapeout-ready: a padframe,
+I/O/ESD cells, shuttle harness, memory/boot architecture, qualified foundry
+signoff decks, and packaging are still required. See `openroad/README.md` for
+the exact GDS hash, LVS scope, and reports.
 
 The generated `openroad/work/` directory is ignored by Git. Save it separately
 if you need to preserve the GDS and physical-design databases.

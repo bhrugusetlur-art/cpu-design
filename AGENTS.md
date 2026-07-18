@@ -127,7 +127,7 @@ SUB uses 2's complement: `diff = a + ~b + 1`.
 | 14 | `tlb.v` | ✅ done | `tlb_tb.v` passes |
 | 15 | `mmu.v` | ✅ done | `mmu_tb.v` passes |
 | 16 | VM integration | ✅ done | `cpu_vm_tb.v` passes |
-| 17 | Sky130 ORFS core hardening | 🟡 core GDS generated | ORFS/STA/route DRC/KLayout DRC clean; LVS unresolved |
+| 17 | Sky130 ORFS core hardening | ✅ core GDS verified | ORFS/STA/route DRC/KLayout DRC and project-deck electrical LVS clean |
 
 ---
 
@@ -184,11 +184,14 @@ SUB uses 2's complement: `diff = a + ~b + 1`.
 | `basys3_top.v` | Basys3 FPGA wrapper for `cpu_top`: 100 MHz clock divider, debounced reset, single-step mode, LEDs, and 4-digit seven-segment PC display |
 | `assembler.cpp` | Two-pass C++ assembler for the ISA; supports labels, decimal/hex immediates, register operands, and `.mem` output padded to 256 words |
 | `tests/run_assembler_tests.sh` | Assembler regression tests for encoding, labels, output padding, and error reporting |
-| `Makefile` | Builds all 15 Verilog simulations into `build/`; `make test` runs every testbench plus assembler regressions |
+| `tests/run_lvs_deck_tests.sh` | Structural regression for the project Sky130 LVS deck: pin-purpose connectivity, report output, split-cell normalization, constant-cell shorts, and tap-cell substrate restoration |
+| `Makefile` | Builds all 15 Verilog simulations into `build/`; `make test` runs every testbench plus assembler and LVS-deck regressions |
 | `docs/superpowers/specs/2026-07-09-virtual-memory-design.md` | Approved VM v1 design: TLB, cache-mediated page walk, PTE format, PTE-store flush, boot image, and tests |
 | `docs/superpowers/plans/2026-07-09-virtual-memory.md` | TDD implementation sequence for VM v1, from TLB through CPU-level fault regression |
+| `graphify-out/` | Git-ignored generated project knowledge graph: interactive HTML, audit report, GraphRAG JSON, extraction cache, and incremental-update metadata |
 | `openroad/config.mk` | ORFS Sky130 HD configuration for hardening `cpu_top` as a core block; 15% initial utilization and 20% slew/cap repair margins; generated files go under `openroad/work/` |
 | `openroad/constraint.sdc` | Initial ASIC timing constraints: 10 MHz core clock, async-reset false path, 5 ns output delay |
+| `openroad/sky130hd_lvs.lylvs` | Project KLayout LVS deck: connects ORFS pin-purpose geometry, normalizes Sky130 split/constant cells, restores tap-cell substrate connectivity, and writes an LVS database |
 | `openroad/README.md` | ORFS setup/run instructions, final GDS hash/metrics, stream-out fix, verification status, backup guidance, and tapeout limitations |
 
 ---
@@ -201,7 +204,8 @@ SUB uses 2's complement: `diff = a + ~b + 1`.
 - The first physical run at 35% initial utilization was congested. The final 15%/20%-repair-margin run completed RTL-to-GDS with about 19% final utilization, 90.29 ns setup slack at 10 MHz, and zero setup/hold/slew/cap, detailed-route DRC, antenna, and standalone KLayout DRC violations.
 - Via-complete final GDS: `openroad/work/results/sky130hd/cpu8/base/6_final.gds`, 34,672,628 bytes, SHA-256 `EB8056AF757277F4828EB0E29479399363749B9FE188F15C5EBE53F8C93879CD`.
 - Stream-out required correcting the generated `klayout.lyt` LEF path from `/workspace/...` to the actual Docker mount `/work/...`; the stale path omitted 138,398 default-via references. Always reject a merge log containing `Invalid via name` warnings.
-- Standalone KLayout LVS is unresolved. Generated CDL normalization allowed extraction, but the bundled deck did not promote the 82 signal/debug GDS labels to top-level pins and reported a mismatch. This is a tapeout blocker even though KLayout DRC is clean.
+- Project-deck KLayout 0.30.7 electrical LVS is clean against the via-complete final GDS: all 146 circuit pairs match with zero nonmatches. The deck connects ORFS datatype-16 pin geometry to routed metal/text, models the device-less `conb_1` and tap-cell connectivity, and normalizes four verified split-symmetric Sky130 cell variants. A direct GDS audit found all 82 labels on pin geometry; `halt` and `VSS` intentionally collapse to one electrical pin through `conb_1`, yielding 81 unique top-level electrical pins.
+- Clean project-deck LVS is not foundry signoff. The selected shuttle/foundry must rerun its qualified decks before fabrication.
 - This run hardens a core block only. `basys3_top.v` and `Basys3_CPU.xdc` are FPGA-only and are excluded.
 - The active `program.mem` is consumed by `imem.v` during synthesis, making that program part of the resulting hardware implementation unless the instruction memory architecture is replaced.
 - The `dmem.v` identity-PTE `initial` block is still a known tapeout blocker; add an explicit boot ROM/loader before fabrication.

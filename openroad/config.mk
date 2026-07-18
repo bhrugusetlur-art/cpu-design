@@ -26,6 +26,11 @@ export VERILOG_FILES = \
 
 export SDC_FILE = $(PROJECT_DIR)/openroad/constraint.sdc
 
+# The upstream Sky130 deck does not connect ORFS's GDS pin-purpose geometry
+# (datatype 16) to the routed metal and text layers.  Use the project deck so
+# all 82 top-level port labels participate in extraction and LVS.
+export KLAYOUT_LVS_FILE = $(PROJECT_DIR)/openroad/sky130hd_lvs.lylvs
+
 # Keep ORFS-generated logs, reports, databases, and GDS files out of the
 # source tree while retaining them under the project for reproducibility.
 export WORK_HOME = $(PROJECT_DIR)/openroad/work

@@ -60,6 +60,8 @@ GDS stream-out for the `cpu_top` core using the official
 - Final setup, hold, max-slew, and max-capacitance violations: 0
 - OpenROAD detailed-route DRC and antenna violations: 0
 - Standalone KLayout Sky130 DRC markers: 0
+- Project-deck KLayout 0.30.7 electrical LVS: clean; 146 circuit pairs,
+  0 nonmatches
 - VDD/VSS connectivity: connected; estimated power: 3.70 mW; worst reported
   IR drop: about 0.000015 V
 
@@ -71,12 +73,41 @@ default-via references. Correcting the generated path to `/work/...`, rerunning
 via-complete GDS identified by the hash above. A future run must check
 `6_1_merge.log` for `Invalid via name` warnings before accepting its GDS.
 
-LVS is **not signed off**. The bundled Sky130 CDL first required generated-copy
-normalization (`short` resistor values and CDL `/` instance separators). After
-that, KLayout extracted the routed network but the bundled LVS deck still did
-not promote the 82 GDS port labels to top-level circuit pins and reported
-`ERROR : Netlists don't match`. This remains a fabrication blocker and needs a
-validated shuttle/foundry LVS deck or a corrected top-level label/pin flow.
+## 2026-07-18 electrical LVS result
+
+The tracked `openroad/sky130hd_lvs.lylvs` deck now produces a clean electrical
+comparison against the via-complete final GDS. The exact KLayout 0.30.7 run
+completed in 1,047 seconds and wrote the Git-ignored evidence database to
+`openroad/work/results/sky130hd/cpu8/base/patched5.lvsdb`:
+
+```text
+INFO : Congratulations! Netlists match.
+CIRCUIT_PAIRS=146 NONMATCHES=0
+```
+
+The upstream deck required four project-specific corrections:
+
+1. ORFS writes top-level port rectangles on pin-purpose datatype 16. The deck
+   now connects those shapes to routed metal and datatype-5 text before
+   promoting named top-level nets to pins.
+2. `sky130_fd_sc_hd__conb_1` uses direct metal shorts in layout but zero-ohm
+   resistors in CDL; the deck normalizes those two CDL connections.
+3. Four used standard-cell variants contain split symmetric source/drain nodes.
+   Targeted `join_symmetric_nets` passes normalize those cells; `a211oi_4`
+   requires two passes because its split branches are nested.
+4. Device-less tap cells are discarded during hierarchy alignment, so the deck
+   explicitly restores their physical top-level `VNB`-to-`VSS` substrate tie.
+
+A direct GDS geometry audit independently found all 82 text labels overlapping
+datatype-16 pin geometry: 77 on met2, 3 on met3, and 2 on met5. There are 81
+unique electrical top pins because the constant-low cell intentionally shorts
+`halt` to `VSS`. Reloading the saved LVS database and invoking KLayout's optional
+`flag_missing_ports` helper still reports combined-name aliases (`VNB` on the
+ground net and `_UNCONNECTED_0` on VDD); the electrical cross-reference itself
+has no unmatched circuits or pins, and the direct label-to-pin audit is clean.
+
+This is open-source project-deck verification, not qualified foundry signoff.
+The selected shuttle/foundry must rerun its own DRC/LVS decks before fabrication.
 
 ## Current limitations
 
@@ -92,4 +123,4 @@ validated shuttle/foundry LVS deck or a corrected top-level label/pin flow.
   from standard cells. Production hardening should evaluate compatible SRAM
   macros and adapt the memory interfaces where necessary.
 - Final tapeout still requires a selected shuttle/foundry harness, padframe,
-  foundry signoff decks, clean LVS, and packaging decisions.
+  qualified foundry signoff decks, and packaging decisions.
