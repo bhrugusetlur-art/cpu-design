@@ -51,6 +51,7 @@ Repository layout:
 - `sim/`: one testbench per module plus full-CPU regressions and their memory files
 - `programs/`: named demo programs that can be copied into `program.mem`
 - `tests/`: assembler test script
+- `openroad/`: Sky130 OpenROAD Flow Scripts configuration and timing constraints
 - `program.mem`: the active FPGA instruction image used by `basys3_top.v`
 
 ## How It Was Tested
@@ -97,6 +98,18 @@ Basys3 board:
 | Cache miss stall behavior | ✅ |
 | Register / PC / memory-request debug views | ✅ |
 | **Virtual memory: TLB remap, PTE-store flush, page-fault freeze + fault view** | ✅ |
+
+## ASIC/OpenROAD status
+
+A Sky130 HD core-block layout has been generated at
+`openroad/work/results/sky130hd/cpu8/base/6_final.gds`. It meets the 10 MHz
+timing target and passes OpenROAD routing checks plus standalone KLayout DRC.
+It is not tapeout-ready: LVS remains unresolved, and a padframe, I/O/ESD cells,
+shuttle harness, memory/boot architecture, foundry signoff, and packaging are
+still required. See `openroad/README.md` for the exact GDS hash and reports.
+
+The generated `openroad/work/` directory is ignored by Git. Save it separately
+if you need to preserve the GDS and physical-design databases.
 
 ## Running It on the Board
 

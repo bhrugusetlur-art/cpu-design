@@ -17,3 +17,7 @@ docs/
 /l2_tb
 /hier_tb
 /top_sim
+
+# OpenROAD Flow Scripts generated outputs
+/openroad/work/
+/openroad/.wsl/
