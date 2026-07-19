@@ -1,232 +1,188 @@
-# 8-bit CPU with Caches and Virtual Memory
+# 8-bit CPU: RTL to GDS
 
-An 8-bit CPU built from scratch in Verilog, running on a Digilent Basys3 FPGA.
-It executes a 12-instruction ISA through a two-level write-back cache
-hierarchy, and every data access is translated through a TLB + MMU with
-software-writable page tables — small enough to read in an afternoon,
-complete enough to page-fault. Every module was built test-first in
-simulation (Icarus Verilog), then verified on the board. Long-term goal:
-tape out a physical chip.
+I designed an 8-bit CPU in Verilog, gave it a two-level write-back cache and
+virtual memory, and carried the complete core from module simulation through a
+verified Sky130 physical layout. The repository includes the RTL, assembler,
+FPGA wrapper, end-to-end regressions, and reproducible ASIC flow configuration.
 
-## The Design
+![Final routed Sky130 core layout](docs/images/final-gds-layout.png)
 
-| Property | Value |
+*The actual via-complete `6_final.gds`, shown front-facing as a bare silicon
+die. The routing geometry is unchanged; the metallic edge, wafer background,
+verified metrics, and layer legend are presentation elements. This is an
+unpackaged core block, not a fabricated or packaged chip.*
+
+## What I built
+
+| Part | Result |
 |---|---|
-| Data width | 8-bit |
-| Instructions | 16-bit wide; 12-instruction ISA (MOV, ADD, SUB, AND, OR, NOT, LOAD, STORE, JMP, JZ, HALT) |
-| Registers | R0–R3, PC, zero + carry flags |
-| Memory model | Harvard: 256×16 instruction ROM, 256×8 data RAM |
-| L1 cache | 8 lines, direct-mapped, 4-byte blocks, write-back |
-| L2 cache | 8 sets × 4 ways, LRU, 4-byte blocks, write-back |
-| Virtual memory | 16-byte pages, 4-entry TLB, hardware page-table walker, page faults |
+| CPU | 8-bit datapath, four registers, zero/carry flags, 8-bit PC, and a 12-instruction ISA |
+| Memory | Harvard architecture with a 256 × 16 instruction ROM and 256 × 8 data RAM |
+| Cache | Direct-mapped L1 plus four-way set-associative L2; both use 4-byte blocks and write-back |
+| Virtual memory | 16-byte pages, four-entry fully associative TLB, hardware page-table walks, PTE-triggered TLB flush, and page faults |
+| Tooling | Two-pass C++ assembler with labels, decimal/hex immediates, validation, and 256-word `.mem` output |
+| FPGA | Basys3 wrapper with 1/2/4 Hz clocks, single-step mode, register/memory/fault LEDs, and hexadecimal PC display |
+| ASIC | Sky130 HD standard-cell core hardened from RTL through routed GDS, timing, DRC, and project-deck LVS |
 
-**Execution path.** The datapath fetches, decodes, and executes one
-instruction at a time. LOAD/STORE addresses are *virtual*: they flow through
-the MMU, which looks up a 4-entry TLB and, on a miss, walks the page table
-through the caches (L1 → L2 → data RAM) before replaying the access at the
-physical address. Instruction fetch stays physical (Harvard).
+The ISA contains `MOV`, `ADD`, `SUB`, `AND`, `OR`, `NOT`, `LOAD`, `STORE`,
+`JMP`, `JZ`, and `HALT` encodings. Instruction fetch is physical; every data
+LOAD/STORE uses a virtual address.
 
-**Virtual memory.** `VA[7:4]` selects one of 16 pages, `VA[3:0]` the byte
-within it. The page table lives at physical `0xF0–0xFF`, one byte per page:
-bit 7 = valid, bits 3:0 = physical page number. Page tables are ordinary
-memory — a STORE into `0xF0–0xFF` flushes the TLB, so software remaps take
-effect on the very next access. Touching a page with an invalid PTE latches
-the faulting address, raises `page_fault`, and freezes the CPU until reset.
-At FPGA configuration the table boots as an identity map, so programs that
-ignore virtual memory run unchanged.
+## How it works
 
-## What Was Built
+```mermaid
+flowchart LR
+    PC["Program counter"] --> IMEM["Instruction ROM<br/>256 × 16"]
+    IMEM --> CTRL["Decode and control"]
+    CTRL --> EXEC["Register file and ALU"]
+    EXEC --> PC
 
-| Group | Files |
-|---|---|
-| CPU core | `pc.v`, `imem.v`, `control.v`, `reg_file.v`, `alu.v`, `datapath.v` |
-| Memory system | `l1_cache.v`, `l2_cache.v`, `cache_hierarchy.v`, `dmem.v` |
-| Virtual memory | `tlb.v`, `mmu.v` |
-| Integration | `cpu_top.v` (CPU + MMU + caches + RAM), `basys3_top.v` (board wrapper: clocking, debounce, single-step, LED/7-seg debug) |
-| Tooling | `assembler.cpp` — two-pass assembler producing `.mem` images |
+    EXEC -- "LOAD / STORE<br/>virtual address" --> MMU["MMU"]
+    MMU --> TLB["4-entry TLB"]
+    TLB -- "hit" --> L1["L1 cache<br/>direct-mapped"]
+    TLB -- "miss" --> WALK["Page-table walk"]
+    WALK --> L1
+    L1 --> L2["L2 cache<br/>4-way LRU"]
+    L2 --> RAM["Data RAM<br/>256 × 8"]
+    L1 -- "read data" --> EXEC
+```
 
-Repository layout:
+On a TLB miss, the MMU reads the page-table entry through the same L1 → L2 →
+RAM path, fills the TLB, and replays the original access. A completed store to
+the page-table area flushes the TLB so a remap is visible on the next access.
+An invalid entry latches the faulting virtual address and freezes the CPU until
+reset.
 
-- `design/`: synthesizable Verilog and the Basys3 XDC constraints file
-- `sim/`: one testbench per module plus full-CPU regressions and their memory files
-- `programs/`: named demo programs that can be copied into `program.mem`
-- `tests/`: assembler test script
-- `openroad/`: Sky130 OpenROAD Flow Scripts configuration and timing constraints
-- `program.mem`: the active FPGA instruction image used by `basys3_top.v`
+## How I built it
 
-## How It Was Tested
+1. **Started with the datapath.** I implemented and tested the ALU, register
+   file, decoder, instruction memory, data memory, and program counter as
+   separate modules.
+2. **Added the memory hierarchy.** I built L1 and L2 independently, then tested
+   hits, cold misses, eviction, LRU selection, and dirty write-back through the
+   complete hierarchy.
+3. **Integrated the CPU.** The datapath, caches, and RAM were connected in
+   `cpu_top.v`, then exercised with arithmetic, branch, store/load, and halt
+   programs.
+4. **Added address translation.** A TLB and MMU introduced page walks,
+   software-writable PTEs, remapping, automatic TLB invalidation, and a stable
+   page-fault state.
+5. **Prepared hardware targets.** I added a debounced Basys3 interface for slow
+   and single-step inspection, then hardened the core with the Sky130 HD flow
+   from synthesis through final GDS.
 
-Development was test-first: each module got a failing testbench, then the
-implementation, from the ALU all the way up to full-CPU regressions — 16
-suites in total, all passing. The two most interesting ones:
+## How I tested it
 
-- `sim/cpu_programs_tb.v` runs the three demo programs on the real
-  CPU + caches and checks final PC/register values.
-- `sim/cpu_vm_tb.v` proves virtual memory end-to-end: it preloads a TLB
-  entry, rewrites the PTE (which must flush the stale entry), stores and
-  loads through the remapped page, then deliberately page-faults and checks
-  the CPU froze with the right fault address.
-
-Icarus Verilog pattern (full per-module command list in `AGENTS.md`):
+The standard regression runs 15 Verilog suites, a complete Basys3 wrapper
+compile check, and assembler/LVS-deck checks with one command:
 
 ```bash
-iverilog -g2012 -o vm_sim sim/cpu_vm_tb.v design/cpu_top.v design/mmu.v design/tlb.v \
-  design/datapath.v design/cache_hierarchy.v design/l1_cache.v design/l2_cache.v \
-  design/dmem.v design/pc.v design/imem.v design/control.v design/reg_file.v \
-  design/alu.v && vvp vm_sim
+make test
 ```
 
-Vivado simulator flow (Windows):
-
-```text
-xvlog -sv sim/cpu_programs_tb.v design/cpu_top.v design/mmu.v design/tlb.v design/datapath.v design/cache_hierarchy.v design/l1_cache.v design/l2_cache.v design/dmem.v design/pc.v design/imem.v design/control.v design/reg_file.v design/alu.v
-xelab -debug typical cpu_programs_tb -s cpu_programs_sim
-xsim cpu_programs_sim -runall
-```
-
-(Substitute `sim/cpu_vm_tb.v` and `cpu_vm_tb` to run the virtual memory
-regression the same way.)
-
-## Verification Status
-
-Everything below passes in simulation **and** has been verified on the
-Basys3 board:
-
-| Area | Hardware-verified |
-|---|---|
-| All 12 ISA instructions (incl. JZ taken/not taken) | ✅ |
-| Cache miss stall behavior | ✅ |
-| Register / PC / memory-request debug views | ✅ |
-| **Virtual memory: TLB remap, PTE-store flush, page-fault freeze + fault view** | ✅ |
-
-## ASIC/OpenROAD status
-
-A Sky130 HD core-block layout has been generated at
-`openroad/work/results/sky130hd/cpu8/base/6_final.gds`. It meets the 10 MHz
-timing target and passes OpenROAD routing checks, standalone KLayout DRC, and
-project-deck KLayout electrical LVS. It is not tapeout-ready: a padframe,
-I/O/ESD cells, shuttle harness, memory/boot architecture, qualified foundry
-signoff decks, and packaging are still required. See `openroad/README.md` for
-the exact GDS hash, LVS scope, and reports.
-
-The generated `openroad/work/` directory is ignored by Git. Save it separately
-if you need to preserve the GDS and physical-design databases.
-
-## Running It on the Board
-
-### Controls
-
-- `btnC`: reset
-- `btnR`: single-step pulse when `SW1:SW0 = 11`
-- `SW1:SW0`: CPU clock — `00` 1 Hz, `01` 2 Hz, `10` 4 Hz, `11` single-step
-- `SW3:SW2`: register select (register view only)
-- `SW5:SW4`: LED debug view (below)
-
-### LED views
-
-| `SW5:SW4` | View | LEDs |
+| Verification level | What is checked | Status |
 |---|---|---|
-| `00` | Register | `LED[7:0]` = register picked by `SW3:SW2`, `LED[8]` halt, `LED[9]` heartbeat |
-| `01` | PC | `LED[7:0]` = PC, `LED[8]` halt, `LED[9]` heartbeat |
-| `10` | Memory/cache | `LED[7:0]` = data address, `LED[10]` request, `LED[11]` write, `LED[12]` stall, `LED[8]` halt, `LED[9]` heartbeat |
-| `11` | Page fault | `LED[15:8]` = faulting VA, `LED[4]` page fault, `LED[3]` zero flag, `LED[2]` stall, `LED[1]` heartbeat, `LED[0]` halt |
+| Modules | ISA operations, flags, registers, PC control, ROM/RAM handshakes | Passing |
+| Caches | L1/L2 hits and misses, byte fills, LRU eviction, dirty write-back | Passing |
+| Full CPU | Three demo programs with final PC/register/cache assertions | Passing |
+| Virtual memory | TLB hit/miss/flush, page walk, remap, invalid PTE, frozen fault state | Passing |
+| Assembler | Encodings, labels, output padding, and error reporting | Passing |
+| Physical core | 10 MHz timing, detailed-route DRC, antenna, standalone KLayout DRC, and project-deck electrical LVS | Clean |
 
-Read `LED[7:0]` as binary, e.g. `0D = 0000 1101` → LED3, LED2, LED0 on.
+The most important end-to-end VM test deliberately loads a stale TLB entry,
+rewrites its PTE, proves the later store reaches the new physical page, then
+accesses an invalid page and confirms that the PC and registers remain frozen
+with the correct fault address.
 
-### Demo programs
+See [testing and verification](docs/testing.md) for coverage and individual
+commands.
 
-The active program is `program.mem` (currently the virtual memory demo). To
-switch demos, copy one of the files below into `program.mem` and rebuild the
-bitstream (reset the synthesis/implementation runs if Vivado doesn't pick up
-the change).
+## FPGA demonstration
 
-#### Cache/store/load — `programs/cache_store_load.mem`
+### Animated simulation
 
-```text
-100A
-1403
-2100
-0800
-8800
-7E00
-F000
+Watch the hexadecimal PC, red LEDs, cycle count, and memory-status indicators
+change as the verified program executes.
+
+![Simulation-derived Basys3 execution](docs/images/fpga-demo.gif)
+
+*A Basys3-style board generated from an asserted full-CPU trace. It shows the
+real PC, register, request, stall, and halt state from simulation; it is not
+physical-board footage.*
+
+### Static control map
+
+This diagram does not animate; it identifies the physical controls and debug
+outputs used by the FPGA wrapper.
+
+![Basys3 control and debug map](docs/images/fpga-controls.svg)
+
+The wrapper supports a normal slow clock or manual single stepping, while the
+switches select register, PC, memory/cache, and page-fault views. The complete
+control map, demo programs, expected states, and Vivado bitstream steps are in
+the [Basys3 FPGA guide](docs/fpga.md).
+
+## ASIC result
+
+| Metric | Final result |
+|---|---|
+| Technology | Sky130 HD standard cells |
+| Core size | 1,094.220 µm × 1,094.220 µm |
+| Standard cells | 12,778, including 3,824 sequential cells |
+| Final utilization | About 19% |
+| Timing target | 10 MHz; 90.29 ns worst setup slack |
+| Estimated minimum period | 9.71 ns, or 102.96 MHz |
+| Route checks | 0 detailed-route DRC violations; 0 antenna violations |
+| Standalone layout DRC | 0 markers |
+| Project-deck electrical LVS | 146 circuit pairs, 0 nonmatches |
+| Final GDS | 34,672,628 bytes; SHA-256 `EB8056AF757277F4828EB0E29479399363749B9FE188F15C5EBE53F8C93879CD` |
+
+The result is a verified core, not a fabrication-ready chip. It still needs a
+shuttle wrapper and padframe, I/O/ESD cells, an ASIC-safe boot and memory
+initialization plan, compatible memory macros or a standard-cell memory
+decision, and qualified foundry DRC/LVS signoff. The full flow, stream-out fix,
+metrics, verification scope, and limitations are in the
+[OpenROAD hardening report](openroad/README.md).
+
+## Reproduce the main results
+
+```bash
+# Build and run the complete regression
+make test
+
+# Regenerate the trace-driven FPGA visuals
+python3 -m pip install -r requirements-visuals.txt
+make fpga-readme-assets
+
+# Build the assembler
+mkdir -p build
+g++ -std=c++17 -O2 assembler.cpp -o build/assembler
 ```
 
-- 7-segment PC shows `00 → 01 → 02 → 03 → 04`, pauses at `04` for the STORE
-  cold miss, then halts at `H06`.
-- Final registers: R0 = `0D`, R1 = `03`, R2 = `0D`, R3 = `0D`.
+FPGA bitstream instructions are in [docs/fpga.md](docs/fpga.md); the Sky130
+hardening command is in [openroad/README.md](openroad/README.md).
 
-#### ALU operations — `programs/alu_ops.mem`
+## Repository map
 
-```text
-100F
-1403
-3100
-0800
-4900
-5900
-6C00
-F000
-```
+| Path | Contents |
+|---|---|
+| `design/` | Synthesizable CPU, cache, MMU/TLB, memory, and Basys3 RTL |
+| `sim/` | Module, integration, program, VM, and trace testbenches |
+| `programs/` | Ready-to-run cache, ALU, and branch memory images |
+| `tests/` | Assembler, physical-deck, trace, and visual-asset checks |
+| `tools/` | Reproducible FPGA and GDS visual renderers |
+| `requirements-visuals.txt` | Pillow dependency for the trace-driven GIF and image checks |
+| `openroad/` | Sky130 HD configuration, timing constraints, LVS deck, and hardening report |
+| `docs/` | FPGA/testing guides, design specifications, plans, and README images |
 
-- Final registers: R0 = `0C`, R1 = `03`, R2 = `03`, R3 = `FF`.
+## Where the project is now
 
-#### Branch and saved zero flag — `programs/branch_jz.mem`
+The complete CPU, cache hierarchy, and virtual-memory design pass simulation,
+and the full core has a project-verified Sky130 GDS. The Basys3 wrapper and
+constraints are ready for a Vivado/board run, but this repository does not
+contain evidence of a completed physical-board test, and no chip has been
+fabricated yet.
 
-```text
-1001
-1401
-3100
-A006
-18EE
-900E
-1802
-1005
-1403
-3100
-A00D
-1C04
-900E
-1CEE
-F000
-```
-
-- Exercises `JZ` taken and not taken using the saved zero flag; halts around `H0E`.
-- Final registers: R0 = `02`, R1 = `03`, R2 = `02`, R3 = `04`.
-
-#### Virtual memory remap and page fault — `sim/vm_program.mem`
-
-```text
-1821
-1c11
-8b00
-1083
-14f2
-8400
-1c5a
-8b00
-7200
-1000
-14f4
-8400
-1840
-7e00
-```
-
-The program stores through VA `0x21` under the boot identity map, rewrites
-PTE[2] so VPN 2 maps to physical page 3 (the PTE store flushes the TLB),
-stores/loads through the remapped VA `0x21` → PA `0x31`, invalidates PTE[4],
-and finally loads from VA `0x40` — which page-faults on purpose.
-
-Expected behavior (hardware-verified):
-
-- The PC display pauses at each LOAD/STORE for the page walk, then freezes
-  at `0D` forever (no `H` — the CPU is faulted, not halted). Reset restarts it.
-- In fault view (`SW5:SW4 = 11`): `LED[15:8] = 0100 0000` (the faulting
-  VA `0x40`, LED14 on) and `LED[4]` on (page fault).
-- Final registers: R0 = `00`, R1 = `F4`, R2 = `40`, R3 = `5A`
-  (R3 proves the faulting LOAD never wrote back).
-
-Note: PTE writes survive reset (the page table is initialized at FPGA
-configuration, not reset), so this demo rewrites its own PTEs at startup and
-behaves the same on every run.
+The next cost-focused direction is a **fixed-ROM CPU Lite for Tiny Tapeout**.
+That smaller edition has been selected as the likely first fabrication target,
+but it has not been implemented yet.

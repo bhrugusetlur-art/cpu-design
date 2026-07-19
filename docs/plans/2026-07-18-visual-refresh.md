@@ -23,8 +23,8 @@ Icarus Verilog, Git.
 - Keep the second FPGA asset explicitly static.
 - Preserve the real GDS geometry; presentation additions stay outside its
   viewport.
-- Keep `docs/specs/2026-07-18-readme-redesign.md` until the user approves the
-  final repository state.
+- Keep the temporary README redesign specification until the user approves the
+  final repository state, then remove it during final cleanup.
 
 ---
 
@@ -40,7 +40,7 @@ Icarus Verilog, Git.
   `docs/images/fpga-controls.svg`.
 - Produces: executable requirements for the renderer in Task 2.
 
-- [ ] **Step 1: Change the expected GIF and SVG dimensions**
+- [x] **Step 1: Change the expected GIF and SVG dimensions**
 
 Replace the current dimension assertions with:
 
@@ -49,7 +49,7 @@ assert image.size == (1200, 675), image.size
 assert root.attrib.get("viewBox") == "0 0 1400 800", root.attrib
 ```
 
-- [ ] **Step 2: Require genuinely different GIF frames**
+- [x] **Step 2: Require genuinely different GIF frames**
 
 Add frame hashing while the GIF is open:
 
@@ -61,7 +61,7 @@ for frame_index in range(image.n_frames):
 assert len(frame_hashes) >= 4, len(frame_hashes)
 ```
 
-- [ ] **Step 3: Require the Basys3 palette**
+- [x] **Step 3: Require the Basys3 palette**
 
 Count representative pixels in the first and last frames:
 
@@ -78,7 +78,7 @@ assert count_pixels(last, lambda p: p[0] > 170 and p[1] < 100) > 150
 assert first.tobytes() != last.tobytes()
 ```
 
-- [ ] **Step 4: Require static-map structure and labels**
+- [x] **Step 4: Require static-map structure and labels**
 
 Add XML checks:
 
@@ -93,7 +93,7 @@ for label in (
     assert label in svg_text, label
 ```
 
-- [ ] **Step 5: Run the test and verify red state**
+- [x] **Step 5: Run the test and verify red state**
 
 Run:
 
@@ -121,7 +121,7 @@ Expected: failure because the old GIF is 960 × 540 and the old SVG view box is
 - Produces: `docs/images/fpga-demo.gif` at 1200 × 675 and
   `docs/images/fpga-controls.svg` with view box `0 0 1400 800`.
 
-- [ ] **Step 1: Establish shared board coordinates and colors**
+- [x] **Step 1: Establish shared board coordinates and colors**
 
 Replace the raster dimensions and add constants:
 
@@ -137,7 +137,7 @@ LED_ON = "#ff334d"
 LED_OFF = "#4b1822"
 ```
 
-- [ ] **Step 2: Add focused raster drawing helpers**
+- [x] **Step 2: Add focused raster drawing helpers**
 
 Implement these signatures so the physical regions remain isolated:
 
@@ -195,7 +195,7 @@ The helpers draw four mounting holes, VGA/USB/power connector silhouettes,
 four side headers, a central Artix-7 package, five buttons, sixteen switches,
 sixteen LEDs, and white silkscreen text.
 
-- [ ] **Step 3: Correct the seven-segment map and place the display**
+- [x] **Step 3: Correct the seven-segment map and place the display**
 
 Fix the zero segment typo and keep all segment maps explicit:
 
@@ -207,7 +207,7 @@ Place the display at the left-center of the PCB and draw four digits. Running
 frames show two blank digits plus the hexadecimal PC; halt frames show `H`, a
 blank, and the hexadecimal PC.
 
-- [ ] **Step 4: Drive switches and LEDs from the trace**
+- [x] **Step 4: Drive switches and LEDs from the trace**
 
 Use the existing `led_value` function. Add:
 
@@ -222,7 +222,7 @@ def switch_value(row: dict[str, int], memory_view: bool) -> int:
 Render all sixteen physical switches, even though only `SW5:SW0` are connected
 by `basys3_top.v`.
 
-- [ ] **Step 5: Add a readable animation/status strip**
+- [x] **Step 5: Add a readable animation/status strip**
 
 Above the board, draw:
 
@@ -235,7 +235,7 @@ REQ  WRITE  STALL  HALT
 
 Status pills illuminate only from the corresponding trace bits.
 
-- [ ] **Step 6: Rebuild the static SVG using the same layout**
+- [x] **Step 6: Rebuild the static SVG using the same layout**
 
 Generate a 1400 × 800 SVG with:
 
@@ -245,7 +245,7 @@ Generate a 1400 × 800 SVG with:
 - callout lines that terminate outside the board rather than crossing labels;
 - title `STATIC CONTROL MAP` and subtitle `Basys3 wrapper inputs and debug outputs`.
 
-- [ ] **Step 7: Regenerate assets and verify green state**
+- [x] **Step 7: Regenerate assets and verify green state**
 
 Run:
 
@@ -256,7 +256,7 @@ make PYTHON=python3 visual-checks
 Expected: 14 unique trace-driven frames, 1200 × 675 GIF, valid 1400 × 800
 static SVG, and all palette/structure assertions pass.
 
-- [ ] **Step 8: Visually inspect both outputs**
+- [x] **Step 8: Visually inspect both outputs**
 
 Open both files and confirm that the display, five buttons, LED row, switch
 row, top connectors, side headers, and callout labels are legible and not
@@ -280,7 +280,7 @@ clipped.
 - Intermediate: `build/final-gds-layout-raw.png`, a clean KLayout render.
 - Produces: `docs/images/final-gds-layout.png`, a 1600 × 1100 styled image.
 
-- [ ] **Step 1: Write the failing GDS hero assertions**
+- [x] **Step 1: Write the failing GDS hero assertions**
 
 Change the dimension check and add region checks:
 
@@ -294,7 +294,7 @@ assert max(channel[1] - channel[0] for channel in ImageStat.Stat(viewport).extre
 assert sum(ImageStat.Stat(legend).mean) / 3 > 18
 ```
 
-- [ ] **Step 2: Run the GDS check and verify red state**
+- [x] **Step 2: Run the GDS check and verify red state**
 
 Run:
 
@@ -304,7 +304,7 @@ python3 tests/check_gds_image.py
 
 Expected: failure because the existing image is 1600 × 1600.
 
-- [ ] **Step 3: Remove the KLayout grid and render raw geometry**
+- [x] **Step 3: Remove the KLayout grid and render raw geometry**
 
 Construct the view with the no-grid option:
 
@@ -315,7 +315,7 @@ view = pya.LayoutView(False, None, pya.LayoutView.LV_NoGrid)
 Keep only boundary and upper M3/M4/M5 routing layers. Use a dark-compatible
 palette, expand hierarchy, fit the core, and write the requested raw output.
 
-- [ ] **Step 4: Create the Pillow styling utility**
+- [x] **Step 4: Create the Pillow styling utility**
 
 Implement:
 
@@ -392,9 +392,11 @@ def main() -> None:
     canvas.save(args.output, format="PNG", optimize=True)
 ```
 
-`main()` validates the raw image, creates a 1600 × 1100 RGB canvas, pastes the
-actual GDS geometry into `(55, 205, 1125, 1045)`, and draws only outside that
-viewport. The right column contains M3/M4/M5 swatches and these exact metrics:
+`main()` validates the raw image, creates a 1600 × 1100 RGB canvas, draws a
+dark wafer ring and an 870 × 870 metallic-beveled die, then pastes the actual
+GDS geometry into the square viewport `(175, 215, 975, 1015)`. A low-opacity
+specular reflection may cross the silicon surface without obscuring routes.
+The right column contains M3/M4/M5 swatches and these exact metrics:
 
 ```text
 CORE      1094.220 µm square
@@ -403,9 +405,12 @@ TARGET    10 MHz
 LVS       146 pairs • 0 nonmatches
 ```
 
-The footer reads `Rendered from the actual via-complete 6_final.gds`.
+The title reads `SKY130 • BARE CORE DIE`, the badge reads `UNPACKAGED CORE
+BLOCK`, and the footer reads `Rendered from the actual via-complete
+6_final.gds`. No package legs, wire bonds, I/O pads, or padframe shapes are
+added.
 
-- [ ] **Step 5: Add a reproducible Make target**
+- [x] **Step 5: Add a reproducible Make target**
 
 Add variables and target:
 
@@ -424,7 +429,7 @@ gds-readme-asset: check-visual-deps
 	$(PYTHON) tools/style_gds_visual.py --input $(GDS_RAW) --output $(GDS_IMAGE)
 ```
 
-- [ ] **Step 6: Render and validate the GDS hero**
+- [x] **Step 6: Render and validate the GDS hero**
 
 Run:
 
@@ -435,7 +440,7 @@ python3 tests/check_gds_image.py
 
 Expected: a 1600 × 1100 image passes tonal, region, detail, and size checks.
 
-- [ ] **Step 7: Visually inspect the final hero**
+- [x] **Step 7: Visually inspect the final hero**
 
 Confirm the complete core is visible, the raw geometry has not been cropped or
 blurred, the grid is absent, the legend matches M3/M4/M5 colors, and every
@@ -456,7 +461,7 @@ metric is legible.
 - Consumes: the regenerated GIF, SVG, and GDS PNG.
 - Produces: unambiguous visual captions and reproduction instructions.
 
-- [ ] **Step 1: Label the animated asset**
+- [x] **Step 1: Label the animated asset**
 
 Immediately before the GIF in both README files, add:
 
@@ -467,7 +472,7 @@ Watch the hexadecimal PC, red LEDs, cycle count, and memory-status indicators
 change as the verified program executes.
 ```
 
-- [ ] **Step 2: Label the static asset**
+- [x] **Step 2: Label the static asset**
 
 Immediately before the SVG in both README files, add:
 
@@ -478,17 +483,17 @@ This diagram does not animate; it identifies the physical controls and debug
 outputs used by the FPGA wrapper.
 ```
 
-- [ ] **Step 3: Update the GDS caption**
+- [x] **Step 3: Update the GDS caption**
 
 Describe the image as a styled presentation of the real via-complete final GDS
 and retain the core-block/not-packaged-chip limitation.
 
-- [ ] **Step 4: Update regeneration instructions and file references**
+- [x] **Step 4: Update regeneration instructions and file references**
 
 Document `make gds-readme-asset`, the new styling tool, the raw build image,
 the new dimensions, and the distinction between animated/static FPGA assets.
 
-- [ ] **Step 5: Validate Markdown and terminology**
+- [x] **Step 5: Validate Markdown and terminology**
 
 Run the relative-link checker, GitHub Markdown endpoint check, repository
 terminology/path audit, and `git diff --check`.
@@ -504,7 +509,7 @@ and path audit is clean, and no whitespace errors are reported.
 
 - Modify only if verification reveals a defect.
 
-- [ ] **Step 1: Run the complete functional regression**
+- [x] **Step 1: Run the complete functional regression**
 
 Run:
 
@@ -515,7 +520,7 @@ make test
 Expected: all 15 Verilog suites, assembler, LVS-deck, Basys3 elaboration,
 trace, and visual-setup checks pass.
 
-- [ ] **Step 2: Regenerate and test all README visuals**
+- [x] **Step 2: Regenerate and test all README visuals**
 
 Run:
 
@@ -527,19 +532,18 @@ python3 tests/check_gds_image.py
 
 Expected: all asset checks pass and the GIF contains distinct frames.
 
-- [ ] **Step 3: Inspect final repository state**
+- [x] **Step 3: Inspect final repository state**
 
 Open the GIF, SVG, and PNG; verify README rendering through GitHub's Markdown
 endpoint; rerun link, terminology/path, and whitespace checks; then inspect
 `git diff --stat` and `git status --short` for unintended files.
 
-- [ ] **Step 4: Present the result for user approval**
+- [x] **Step 4: Present the result for user approval**
 
-Show the final FPGA animation and GDS hero. Keep
-`docs/specs/2026-07-18-readme-redesign.md` until the user explicitly approves
-this final repository state.
+Show the final FPGA animation and GDS hero. Keep the temporary README redesign
+specification until the user explicitly approves this final repository state.
 
-- [ ] **Step 5: After approval, finish directly on main**
+- [x] **Step 5: After approval, finish directly on main**
 
 Delete the original README redesign specification, update the maintained
 internal project map, rerun the complete verification commands, commit all

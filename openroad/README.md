@@ -3,7 +3,9 @@
 This directory configures an initial standard-cell hardening run of
 `design/cpu_top.v` with OpenROAD Flow Scripts (ORFS) and the `sky130hd`
 platform. It produces a routed **core-block GDSII**, not a complete packaged
-chip or shuttle-ready padframe.
+chip or shuttle-ready padframe. For the concise project overview and complete
+simulation coverage, see the [main README](../README.md) and
+[testing guide](../docs/testing.md).
 
 ## Prerequisites
 

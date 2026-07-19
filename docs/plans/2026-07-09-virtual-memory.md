@@ -1,7 +1,5 @@
 # Virtual Memory v1 Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
-
 **Goal:** Add a four-entry TLB and cache-mediated MMU for virtual LOAD/STORE addresses, preserving existing CPU behavior through an identity-mapped boot page table.
 
 **Architecture:** `datapath` continues to produce virtual data requests. A new `mmu` owns the request handshake, looks up a new fully associative `tlb`, walks PTEs through the existing physical cache hierarchy on misses, and either replays the translated access or freezes on a page fault. `dmem` supplies an FPGA/simulation identity-map image at configuration time.
@@ -24,7 +22,7 @@
 | `design/basys3_top.v` | Display fault state and faulting VA in the final debug view. |
 | `sim/cpu_vm_tb.v` | Full CPU/cache/dmem regression for remap, PTE-store flush, and fault freeze. |
 | `sim/vm_program.mem` | Program consumed by `cpu_vm_tb.v`. |
-| `README.md`, `AGENTS.md` | Update debug-view and VM module/test instructions after implementation. |
+| `README.md`, `docs/testing.md` | Update debug-view and VM module/test instructions after implementation. |
 
 ### Task 1: TLB module and isolated regression
 
@@ -372,7 +370,7 @@ git commit -m "feat: wire virtual memory into CPU top"
 **Files:**
 - Create: `sim/vm_program.mem`
 - Modify: `sim/cpu_vm_tb.v`
-- Modify: `AGENTS.md`
+- Modify: maintained project map
 
 - [ ] **Step 1: Complete the VM program and integration test**
 
@@ -444,7 +442,7 @@ Expected: every command exits zero. Use `/tmp` outputs so generated simulators d
 
 - [ ] **Step 4: Update durable project context**
 
-Update `AGENTS.md` after the verified implementation:
+Update the maintained project map after the verified implementation:
 
 ```markdown
 | 14 | `tlb.v` | ✅ done | `tlb_tb.v` passes |
@@ -456,6 +454,6 @@ Add `tlb.v`, `tlb_tb.v`, `mmu.v`, `mmu_tb.v`, `cpu_vm_tb.v`, and `vm_program.mem
 - [ ] **Step 5: Commit the VM regression and documentation**
 
 ```bash
-git add sim/vm_program.mem sim/cpu_vm_tb.v AGENTS.md
+git add sim/vm_program.mem sim/cpu_vm_tb.v README.md
 git commit -m "test: cover virtual memory remap and faults"
 ```

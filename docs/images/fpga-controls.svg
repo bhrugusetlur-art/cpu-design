@@ -1,0 +1,138 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 800" role="img" aria-labelledby="title desc">
+<title id="title">Static control map for the Basys3 8-bit CPU wrapper</title>
+<desc id="desc">A realistic static Basys3 diagram labeling reset, single step, speed selection, register selection, debug selection, LEDs, and the PC and HALT display.</desc>
+<defs>
+  <filter id="shadow" x="-20%" y="-20%" width="140%" height="150%"><feDropShadow dx="0" dy="12" stdDeviation="12" flood-color="#000814" flood-opacity="0.75"/></filter>
+  <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#64d7ff"/></marker>
+</defs>
+<style>
+  .board { fill:#0b4f85; stroke:#55a6d8; stroke-width:4; }
+  .connector { fill:#151b22; stroke:#74838e; stroke-width:2; }
+  .chip { fill:#151b22; stroke:#7895a7; stroke-width:2; }
+  .pin { fill:#d8af58; }
+  .display { fill:#11151a; stroke:#87939b; stroke-width:3; }
+  .digit { fill:#321a20; stroke:#62313b; stroke-width:2; }
+  .led { fill:#481923; stroke:#9c5361; stroke-width:2; }
+  .switch { fill:#10161b; stroke:#75818a; stroke-width:2; }
+  .paddle { fill:#3a444c; }
+  .button { fill:#171d23; stroke:#b3c0c8; stroke-width:2; }
+  .silk { fill:#dcebf4; font:700 18px Arial,sans-serif; }
+  .title { fill:#f6f8fb; font:700 34px Arial,sans-serif; }
+  .subtitle { fill:#91a9c1; font:18px Arial,sans-serif; }
+  .callout { fill:none; stroke:#64d7ff; stroke-width:3; marker-end:url(#arrow); }
+  .calloutBox { fill:#101b2b; stroke:#2e789c; stroke-width:2; }
+  .calloutTitle { fill:#f6f8fb; font:700 17px Arial,sans-serif; text-anchor:middle; }
+  .calloutDetail { fill:#9ec2d8; font:14px Arial,sans-serif; text-anchor:middle; }
+  .tiny { fill:#a7c7d9; font:10px Arial,sans-serif; text-anchor:middle; }
+</style>
+<rect width="1400" height="800" fill="#080d18"/>
+<text x="70" y="58" class="title">STATIC CONTROL MAP</text>
+<text x="70" y="90" class="subtitle">Basys3 wrapper inputs and debug outputs • static reference</text>
+
+<rect x="174" y="144" width="1052" height="512" rx="24" fill="#02060b" filter="url(#shadow)"/>
+<rect x="184" y="130" width="1032" height="512" rx="20" class="board"/>
+<circle cx="214" cy="160" r="14" fill="#071b2b" stroke="#9ac5dd" stroke-width="3"/>
+<circle cx="1186" cy="160" r="14" fill="#071b2b" stroke="#9ac5dd" stroke-width="3"/>
+<circle cx="214" cy="612" r="14" fill="#071b2b" stroke="#9ac5dd" stroke-width="3"/>
+<circle cx="1186" cy="612" r="14" fill="#071b2b" stroke="#9ac5dd" stroke-width="3"/>
+
+<rect x="465" y="130" width="165" height="74" rx="7" class="connector"/>
+<rect x="710" y="138" width="88" height="61" rx="5" fill="#d8dde1" stroke="#7d878e" stroke-width="3"/>
+<rect x="842" y="139" width="58" height="56" rx="4" class="connector"/>
+<circle cx="1050" cy="153" r="15" fill="#b7282f" stroke="#e7a2a5" stroke-width="2"/>
+<rect x="184" y="252" width="42" height="82" rx="5" class="connector"/>
+<rect x="184" y="365" width="42" height="82" rx="5" class="connector"/>
+<rect x="1174" y="252" width="42" height="82" rx="5" class="connector"/>
+<rect x="1174" y="365" width="42" height="82" rx="5" class="connector"/>
+<rect x="205" y="278" width="6" height="4" class="pin"/>
+<rect x="215" y="278" width="6" height="4" class="pin"/>
+<rect x="225" y="278" width="6" height="4" class="pin"/>
+
+<rect x="570" y="246" width="158" height="142" rx="8" class="chip"/>
+<text x="649" y="310" class="silk" text-anchor="middle">ARTIX-7</text>
+<text x="649" y="340" class="tiny">XC7A35T</text>
+<rect x="362" y="252" width="78" height="72" rx="5" class="chip"/>
+<rect x="460" y="264" width="70" height="76" rx="5" class="chip"/>
+<rect x="750" y="250" width="72" height="68" rx="5" class="chip"/>
+<text x="246" y="205" class="silk">DIGILENT</text>
+<text x="1010" y="210" class="silk">BASYS 3</text>
+
+<rect x="332" y="360" width="242" height="116" rx="7" class="display"/>
+<rect x="347" y="372" width="48" height="88" rx="4" class="digit"/>
+<rect x="401" y="372" width="48" height="88" rx="4" class="digit"/>
+<rect x="455" y="372" width="48" height="88" rx="4" class="digit"/>
+<rect x="509" y="372" width="48" height="88" rx="4" class="digit"/>
+<text x="453" y="495" class="tiny">PC / HALT</text>
+
+<g id="buttons">
+  <rect x="900" y="300" width="40" height="40" rx="7" class="button"/><text x="920" y="325" class="tiny">U</text>
+  <rect x="900" y="388" width="40" height="40" rx="7" class="button"/><text x="920" y="413" class="tiny">D</text>
+  <rect x="856" y="344" width="40" height="40" rx="7" class="button"/><text x="876" y="369" class="tiny">L</text>
+  <rect x="944" y="344" width="40" height="40" rx="7" class="button"/><text x="964" y="369" class="tiny">btnR</text>
+  <rect x="900" y="344" width="40" height="40" rx="7" class="button"/><text x="920" y="369" class="tiny">btnC</text>
+</g>
+
+<text x="700" y="513" class="tiny">LED[15:0]</text>
+<circle data-role="led" cx="260" cy="542" r="8" class="led"/><text x="260" y="523" class="tiny">15</text>
+<circle data-role="led" cx="317" cy="542" r="8" class="led"/><text x="317" y="523" class="tiny">14</text>
+<circle data-role="led" cx="374" cy="542" r="8" class="led"/><text x="374" y="523" class="tiny">13</text>
+<circle data-role="led" cx="431" cy="542" r="8" class="led"/><text x="431" y="523" class="tiny">12</text>
+<circle data-role="led" cx="488" cy="542" r="8" class="led"/><text x="488" y="523" class="tiny">11</text>
+<circle data-role="led" cx="545" cy="542" r="8" class="led"/><text x="545" y="523" class="tiny">10</text>
+<circle data-role="led" cx="602" cy="542" r="8" class="led"/><text x="602" y="523" class="tiny">9</text>
+<circle data-role="led" cx="659" cy="542" r="8" class="led"/><text x="659" y="523" class="tiny">8</text>
+<circle data-role="led" cx="716" cy="542" r="8" class="led"/><text x="716" y="523" class="tiny">7</text>
+<circle data-role="led" cx="773" cy="542" r="8" class="led"/><text x="773" y="523" class="tiny">6</text>
+<circle data-role="led" cx="830" cy="542" r="8" class="led"/><text x="830" y="523" class="tiny">5</text>
+<circle data-role="led" cx="887" cy="542" r="8" class="led"/><text x="887" y="523" class="tiny">4</text>
+<circle data-role="led" cx="944" cy="542" r="8" class="led"/><text x="944" y="523" class="tiny">3</text>
+<circle data-role="led" cx="1001" cy="542" r="8" class="led"/><text x="1001" y="523" class="tiny">2</text>
+<circle data-role="led" cx="1058" cy="542" r="8" class="led"/><text x="1058" y="523" class="tiny">1</text>
+<circle data-role="led" cx="1115" cy="542" r="8" class="led"/><text x="1115" y="523" class="tiny">0</text>
+<g data-role="switch"><rect x="245" y="565" width="30" height="56" rx="4" class="switch"/><rect x="251" y="591" width="18" height="22" rx="3" class="paddle"/><text x="260" y="635" class="tiny">15</text></g>
+<g data-role="switch"><rect x="302" y="565" width="30" height="56" rx="4" class="switch"/><rect x="308" y="591" width="18" height="22" rx="3" class="paddle"/><text x="317" y="635" class="tiny">14</text></g>
+<g data-role="switch"><rect x="359" y="565" width="30" height="56" rx="4" class="switch"/><rect x="365" y="591" width="18" height="22" rx="3" class="paddle"/><text x="374" y="635" class="tiny">13</text></g>
+<g data-role="switch"><rect x="416" y="565" width="30" height="56" rx="4" class="switch"/><rect x="422" y="591" width="18" height="22" rx="3" class="paddle"/><text x="431" y="635" class="tiny">12</text></g>
+<g data-role="switch"><rect x="473" y="565" width="30" height="56" rx="4" class="switch"/><rect x="479" y="591" width="18" height="22" rx="3" class="paddle"/><text x="488" y="635" class="tiny">11</text></g>
+<g data-role="switch"><rect x="530" y="565" width="30" height="56" rx="4" class="switch"/><rect x="536" y="591" width="18" height="22" rx="3" class="paddle"/><text x="545" y="635" class="tiny">10</text></g>
+<g data-role="switch"><rect x="587" y="565" width="30" height="56" rx="4" class="switch"/><rect x="593" y="591" width="18" height="22" rx="3" class="paddle"/><text x="602" y="635" class="tiny">9</text></g>
+<g data-role="switch"><rect x="644" y="565" width="30" height="56" rx="4" class="switch"/><rect x="650" y="591" width="18" height="22" rx="3" class="paddle"/><text x="659" y="635" class="tiny">8</text></g>
+<g data-role="switch"><rect x="701" y="565" width="30" height="56" rx="4" class="switch"/><rect x="707" y="591" width="18" height="22" rx="3" class="paddle"/><text x="716" y="635" class="tiny">7</text></g>
+<g data-role="switch"><rect x="758" y="565" width="30" height="56" rx="4" class="switch"/><rect x="764" y="591" width="18" height="22" rx="3" class="paddle"/><text x="773" y="635" class="tiny">6</text></g>
+<g data-role="switch"><rect x="815" y="565" width="30" height="56" rx="4" class="switch"/><rect x="821" y="591" width="18" height="22" rx="3" class="paddle"/><text x="830" y="635" class="tiny">5</text></g>
+<g data-role="switch"><rect x="872" y="565" width="30" height="56" rx="4" class="switch"/><rect x="878" y="591" width="18" height="22" rx="3" class="paddle"/><text x="887" y="635" class="tiny">4</text></g>
+<g data-role="switch"><rect x="929" y="565" width="30" height="56" rx="4" class="switch"/><rect x="935" y="591" width="18" height="22" rx="3" class="paddle"/><text x="944" y="635" class="tiny">3</text></g>
+<g data-role="switch"><rect x="986" y="565" width="30" height="56" rx="4" class="switch"/><rect x="992" y="591" width="18" height="22" rx="3" class="paddle"/><text x="1001" y="635" class="tiny">2</text></g>
+<g data-role="switch"><rect x="1043" y="565" width="30" height="56" rx="4" class="switch"/><rect x="1049" y="591" width="18" height="22" rx="3" class="paddle"/><text x="1058" y="635" class="tiny">1</text></g>
+<g data-role="switch"><rect x="1100" y="565" width="30" height="56" rx="4" class="switch"/><rect x="1106" y="591" width="18" height="22" rx="3" class="paddle"/><text x="1115" y="635" class="tiny">0</text></g>
+
+<rect x="34" y="238" width="180" height="74" rx="12" class="calloutBox"/>
+<text x="124" y="266" class="calloutTitle">LED[15:0]</text>
+<text x="124" y="291" class="calloutDetail">debug output</text>
+<path d="M214 275 C245 300 230 470 260 542" class="callout"/>
+
+<rect x="650" y="32" width="260" height="68" rx="12" class="calloutBox"/>
+<text x="780" y="59" class="calloutTitle">PC / HALT display</text>
+<text x="780" y="83" class="calloutDetail">H + 8-bit program counter</text>
+<path d="M740 100 C650 155 520 260 453 350" class="callout"/>
+
+<rect x="1050" y="45" width="250" height="72" rx="12" class="calloutBox"/>
+<text x="1175" y="72" class="calloutTitle">btnC / btnR</text>
+<text x="1175" y="97" class="calloutDetail">reset / single-step</text>
+<path d="M1110 117 C1080 180 1020 260 965 350" class="callout"/>
+
+<rect x="280" y="690" width="230" height="72" rx="12" class="calloutBox"/>
+<text x="395" y="717" class="calloutTitle">SW5:SW4</text>
+<text x="395" y="742" class="calloutDetail">debug-view selection</text>
+<path d="M395 690 C540 650 760 638 845 612" class="callout"/>
+
+<rect x="590" y="690" width="220" height="72" rx="12" class="calloutBox"/>
+<text x="700" y="717" class="calloutTitle">SW3:SW2</text>
+<text x="700" y="742" class="calloutDetail">register selection</text>
+<path d="M700 690 C790 650 910 638 959 612" class="callout"/>
+
+<rect x="890" y="690" width="230" height="72" rx="12" class="calloutBox"/>
+<text x="1005" y="717" class="calloutTitle">SW1:SW0</text>
+<text x="1005" y="742" class="calloutDetail">speed / single-step</text>
+<path d="M1005 690 C1035 660 1060 636 1073 612" class="callout"/>
+</svg>

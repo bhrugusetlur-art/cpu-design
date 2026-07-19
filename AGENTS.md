@@ -141,7 +141,7 @@ SUB uses 2's complement: `diff = a + ~b + 1`.
 - Invalid PTE: MMU latches `fault_va`, asserts `page_fault`, and stalls the CPU until reset. `cpu_top` exports `debug_page_fault`/`debug_fault_va`; Basys3 view `SW5:SW4=11` shows the fault VA on `LED[15:8]` and the fault flag on `LED[4]`.
 - **Boot-image limitation:** `dmem.v` initializes `0xF0–0xFF` to an identity map (`0x80|n`) in an `initial` block — applied at FPGA configuration / simulation start, NOT restored by reset. A tapeout revision needs an explicit boot ROM or loader.
 - VM regression: `iverilog -g2012 -o vm_sim sim/cpu_vm_tb.v design/cpu_top.v design/mmu.v design/tlb.v design/datapath.v design/cache_hierarchy.v design/l1_cache.v design/l2_cache.v design/dmem.v design/pc.v design/imem.v design/control.v design/reg_file.v design/alu.v && vvp vm_sim`
-- Full design: `docs/superpowers/specs/2026-07-09-virtual-memory-design.md`.
+- Full design: `docs/specs/2026-07-09-virtual-memory-design.md`.
 
 ---
 
@@ -149,6 +149,7 @@ SUB uses 2's complement: `diff = a + ~b + 1`.
 
 | File | Description |
 |---|---|
+| `README.md` | Portfolio-first project overview: outcome, architecture, build story, verification evidence, FPGA visuals, ASIC metrics, repository map, and current state |
 | `l1_cache.v` | Direct-mapped write-back L1 cache; `l2_pend` guards one outstanding L2 request per byte |
 | `l1_cache_tb.v` | L1 testbench (cold miss, hit, write-back, eviction) |
 | `l2_cache.v` | 4-way set-associative write-back L2 cache with LRU |
@@ -181,16 +182,32 @@ SUB uses 2's complement: `diff = a + ~b + 1`.
 | `cpu_vm_tb.v` | Full-CPU VM regression: stale-TLB flush proof, remapped store/load, fault freeze |
 | `vm_program.mem` | 14-instruction VM test program consumed by `cpu_vm_tb.v` |
 | `dbg_cputop.v` | Debug harness for tracing `cpu_top` execution and cache request timing |
+| `fpga_demo_trace_tb.v` | Documentation trace harness: runs the full CPU integration program, asserts its final state, and writes cycle-level FPGA debug data to `build/fpga-demo-trace.csv` |
+| `fpga_demo.mem` | Padded 256-word image for the FPGA documentation trace; matches the CPU integration STORE/LOAD program without partial-`$readmemh` warnings |
 | `basys3_top.v` | Basys3 FPGA wrapper for `cpu_top`: 100 MHz clock divider, debounced reset, single-step mode, LEDs, and 4-digit seven-segment PC display |
 | `assembler.cpp` | Two-pass C++ assembler for the ISA; supports labels, decimal/hex immediates, register operands, and `.mem` output padded to 256 words |
 | `tests/run_assembler_tests.sh` | Assembler regression tests for encoding, labels, output padding, and error reporting |
 | `tests/run_lvs_deck_tests.sh` | Structural regression for the project Sky130 LVS deck: pin-purpose connectivity, report output, split-cell normalization, constant-cell shorts, and tap-cell substrate restoration |
-| `Makefile` | Builds all 15 Verilog simulations into `build/`; `make test` runs every testbench plus assembler and LVS-deck regressions |
-| `docs/specs/2026-07-18-readme-redesign.md` | Approved portfolio-first README redesign: content order, real GDS and simulation-derived FPGA visuals, documentation cleanup, accuracy rules, and verification requirements |
+| `tests/check_fpga_demo_trace.sh` | Regression for the simulation-derived FPGA visual trace: schema, stalls, requests, halt, and final PC/register state |
+| `tests/check_basys3_compile.sh` | Icarus elaboration check for the Basys3 wrapper and complete CPU hierarchy |
+| `tests/check_fpga_visuals.py` | Visual-asset regression: regenerates the FPGA GIF/SVG and validates distinct animation frames, Basys3 palette, canvas size, file size, static-map structure, and required labels |
+| `tests/check_visual_setup.sh` | Visual dependency regression: requires the Pillow declaration and verifies the Makefile reports the exact setup command when Pillow is unavailable |
+| `tools/render_fpga_visuals.py` | Converts the verified CPU trace into a recognizable blue-board Basys3 animation and matching static control diagram |
+| `docs/images/fpga-demo.gif` | 1200×675 simulation-derived Basys3 animation with 14 distinct PC/request/stall/halt states from the asserted full-CPU trace |
+| `docs/images/fpga-controls.svg` | 1400×800 static Basys3 control map with 16 LEDs, 16 switches, buttons, PC display, and wrapper callouts |
+| `tools/render_gds_layout.py` | KLayout batch renderer for producing the clean raw upper-routing-layer image directly from the final routed GDS |
+| `tools/style_gds_visual.py` | Pillow presentation layer that frames the untouched raw GDS render as a front-facing bare die with metallic edge, wafer background, verified metrics, and routing-layer legend |
+| `tests/check_gds_image.py` | GDS hero regression: validates 1600×1100 PNG format, square routing viewport, metallic bevel, dark wafer region, tonal detail, legend, and practical file size |
+| `docs/images/final-gds-layout.png` | 1600×1100 bare-die portfolio hero combining untouched upper-layer geometry from the via-complete GDS with verified metrics and a routing legend |
+| `docs/fpga.md` | Basys3 status, controls, debug views, demo programs, expected results, and Vivado bitstream workflow |
+| `docs/testing.md` | Regression coverage map, individual/full-CPU commands, Vivado simulation, and documentation-asset checks |
+| `requirements-visuals.txt` | Version-bounded Pillow dependency for FPGA visual generation and image validation |
+| `Makefile` | Builds all 15 Verilog simulations and the Basys3/visual trace checks; also regenerates FPGA assets and the two-stage actual-GDS hero |
+| `docs/specs/2026-07-18-visual-refresh-design.md` | Approved Basys3/GDS visual refresh: realistic trace-driven board animation, clearly static control map, polished actual-GDS hero, and visual verification rules |
 | `docs/plans/2026-07-18-readme-revamp.md` | Implementation plan for the portfolio README, neutral documentation layout, simulation-derived FPGA visuals, real GDS rendering, repository cleanup, and final approval gate |
-| `docs/superpowers/specs/2026-07-09-virtual-memory-design.md` | Approved VM v1 design: TLB, cache-mediated page walk, PTE format, PTE-store flush, boot image, and tests |
-| `docs/superpowers/plans/2026-07-09-virtual-memory.md` | TDD implementation sequence for VM v1, from TLB through CPU-level fault regression |
-| `graphify-out/` | Git-ignored generated project knowledge graph: interactive HTML, audit report, GraphRAG JSON, extraction cache, and incremental-update metadata |
+| `docs/plans/2026-07-18-visual-refresh.md` | Test-first implementation plan for the realistic Basys3 animation, static control map, styled actual-GDS hero, README clarification, and final verification |
+| `docs/specs/2026-07-09-virtual-memory-design.md` | Approved VM v1 design: TLB, cache-mediated page walk, PTE format, PTE-store flush, boot image, and tests |
+| `docs/plans/2026-07-09-virtual-memory.md` | TDD implementation sequence for VM v1, from TLB through CPU-level fault regression |
 | `openroad/config.mk` | ORFS Sky130 HD configuration for hardening `cpu_top` as a core block; 15% initial utilization and 20% slew/cap repair margins; generated files go under `openroad/work/` |
 | `openroad/constraint.sdc` | Initial ASIC timing constraints: 10 MHz core clock, async-reset false path, 5 ns output delay |
 | `openroad/sky130hd_lvs.lylvs` | Project KLayout LVS deck: connects ORFS pin-purpose geometry, normalizes Sky130 split/constant cells, restores tap-cell substrate connectivity, and writes an LVS database |

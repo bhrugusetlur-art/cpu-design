@@ -4,9 +4,6 @@
 *_tb
 *.vcd
 
-# Local visual brainstorming companion state
-/.superpowers/
-
 # Local build products
 /assembler
 /dbg_sim
@@ -18,6 +15,3 @@
 # OpenROAD Flow Scripts generated outputs
 /openroad/work/
 /openroad/.wsl/
-
-# Generated Graphify knowledge graph and cache
-/graphify-out/

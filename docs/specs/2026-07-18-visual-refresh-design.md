@@ -118,9 +118,22 @@ viewport:
 - an M3/M4/M5 color legend;
 - a caption stating that the image is rendered from the actual final GDS.
 
-The style uses a near-black/navy background and a restrained cyan, violet,
-gold, and green palette. It must not blur, redraw, add, or remove layout
-geometry.
+### Bare-die presentation
+
+The final presentation resembles an unpackaged silicon die rather than a
+layout-viewer screenshot. The real routing image fills a square, front-facing
+silicon surface with a narrow metallic bevel, soft drop shadow, subtle
+specular reflection, and a dark wafer-style background. The title reads
+`SKY130 • BARE CORE DIE` and the status badge reads `UNPACKAGED CORE BLOCK`.
+
+The layer palette uses semiconductor-like gold, teal, and violet tones. The
+metric panel remains beside the die and explicitly states the core size,
+utilization, timing target, and project-deck LVS result.
+
+No package legs, wire bonds, I/O pads, or padframe geometry are invented. The
+die remains front-facing, and all bevel, shadow, reflection, title, legend,
+and metric elements stay outside the GDS viewport. The style must not blur,
+redraw, add, or remove layout geometry.
 
 ## Renderer structure
 
@@ -154,7 +167,8 @@ The GDS image test requires:
 
 - PNG format and 1600 × 1100 dimensions;
 - nontrivial dark and colored pixel ranges;
-- a sufficiently detailed layout viewport rather than a flat illustration;
+- a square 800 × 800 detailed layout viewport rather than a flat illustration;
+- a visible metallic bevel and dark wafer background outside the viewport;
 - expected metric/title text regions with no clipping;
 - practical repository file size.
 
