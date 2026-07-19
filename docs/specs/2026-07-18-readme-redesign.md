@@ -72,10 +72,10 @@ The architecture visual remains Mermaid source inside the README so it is search
 - Delete the redundant root-level project-map copy and retain the maintained internal project map.
 - Move legacy design and implementation documents into `docs/specs/` and `docs/plans/`.
 - Preserve both existing virtual-memory documents and both currently untracked assembler documents.
-- Remove workflow-assistant wording and preambles from public files.
+- Remove private workflow wording and preambles from public files.
 - Remove references to the internal project map from every other tracked file.
 - Remove generated local-analysis references from tracked ignore rules and documentation while keeping those generated files excluded locally.
-- After cleanup, a repository-wide audit must find no prohibited workflow-assistant names or terminology outside the maintained internal project map.
+- After cleanup, a repository-wide audit must find no prohibited private workflow names or terminology outside the maintained internal project map.
 
 ## Accuracy rules
 
@@ -96,7 +96,7 @@ Completion requires all of the following:
 4. The final GDS PNG opens correctly and visibly contains the routed core.
 5. The FPGA GIF opens correctly, contains multiple frames, and stays within a practical repository size.
 6. The FPGA SVG renders without clipped labels or overlapping controls.
-7. A repository-wide text and path audit finds no prohibited workflow-assistant references outside the maintained internal project map.
+7. A repository-wide text and path audit finds no prohibited private workflow references outside the maintained internal project map.
 8. The README renders as a clear portfolio page at normal GitHub width.
 
 ## Out of scope
