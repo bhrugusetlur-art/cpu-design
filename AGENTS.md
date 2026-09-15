@@ -5,6 +5,14 @@
 ## Goal
 Build a fully working 8-bit CPU in Verilog, simulate and test every module, then **physically print/tape out the chip**. After the CPU and cache are complete, add virtual memory (TLB + MMU).
 
+## Confirmed by the owner
+
+- **The CPU ran on a physical Basys 3 FPGA board** (confirmed 2026-09-14). `README.md` and
+  `docs/fpga.md` still say no board run is recorded; that wording is out of date. Do not
+  describe the board run as pending or unverified, and do not remove the claim from the
+  owner's resume or portfolio.
+- The Sky130 GDS is still project-deck verified only: not foundry signoff, not fabricated.
+
 ## Toolchain
 - **Simulator:** Icarus Verilog — compile with `iverilog -g2012`, run with `vvp`
 - **Waveforms:** WaveTrace (VSCode extension, 8-signal limit on free tier) or GTKWave
