@@ -2,10 +2,10 @@
 
 The repository includes a synthesizable Basys3 wrapper with selectable clock
 speeds, single-step execution, register and memory debug views, and a
-four-digit program-counter display. The CPU is covered by simulation, and the
-complete wrapper has an automated compile check. The animated board view below
-is generated from a verified simulation trace, not camera footage from a
-board.
+four-digit program-counter display. The CPU is covered by simulation, the
+complete wrapper has an automated compile check, and the design has run on a
+physical Basys3 board. The animated board view below is generated from a
+verified simulation trace, not camera footage from a board.
 
 ## Animated simulation
 

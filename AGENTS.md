@@ -7,10 +7,10 @@ Build a fully working 8-bit CPU in Verilog, simulate and test every module, then
 
 ## Confirmed by the owner
 
-- **The CPU ran on a physical Basys 3 FPGA board** (confirmed 2026-09-14). `README.md` and
-  `docs/fpga.md` still say no board run is recorded; that wording is out of date. Do not
-  describe the board run as pending or unverified, and do not remove the claim from the
-  owner's resume or portfolio.
+- **The CPU ran on a physical Basys 3 FPGA board** (confirmed 2026-09-14). Do not describe
+  the board run as pending or unverified, and do not remove the claim from `README.md`,
+  `docs/fpga.md`, or the owner's resume or portfolio. The FPGA GIF is still
+  simulation-derived, so keep captions saying it is not board footage.
 - The Sky130 GDS is still project-deck verified only: not foundry signoff, not fabricated.
 
 ## Toolchain

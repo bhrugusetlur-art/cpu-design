@@ -67,9 +67,9 @@ reset.
 4. **Added address translation.** A TLB and MMU introduced page walks,
    software-writable PTEs, remapping, automatic TLB invalidation, and a stable
    page-fault state.
-5. **Prepared hardware targets.** I added a debounced Basys3 interface for slow
-   and single-step inspection, then hardened the core with the Sky130 HD flow
-   from synthesis through final GDS.
+5. **Ran it on hardware.** I added a debounced Basys3 interface for slow and
+   single-step inspection and ran the CPU on a physical Basys3 board, then
+   hardened the core with the Sky130 HD flow from synthesis through final GDS.
 
 ## How I tested it
 
@@ -178,10 +178,9 @@ hardening command is in [openroad/README.md](openroad/README.md).
 ## Where the project is now
 
 The complete CPU, cache hierarchy, and virtual-memory design pass simulation,
-and the full core has a project-verified Sky130 GDS. The Basys3 wrapper and
-constraints are ready for a Vivado/board run, but this repository does not
-contain evidence of a completed physical-board test, and no chip has been
-fabricated yet.
+and the full core has a project-verified Sky130 GDS. The design has run on a
+physical Basys3 board through the included wrapper and constraints. No chip has
+been fabricated yet.
 
 The next cost-focused direction is a **fixed-ROM CPU Lite for Tiny Tapeout**.
 That smaller edition has been selected as the likely first fabrication target,
